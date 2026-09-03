@@ -8,11 +8,9 @@ export default defineConfig({
   integrations: [
     starlight({
       title: "Tree Lint",
-      defaultLocale: "en",
+      defaultLocale: "root",
       locales: {
-        en: {
-          label: "English",
-        },
+        root: { label: "English", lang: "en" },
         uk: {
           label: "Українська",
           lang: "uk",
@@ -32,23 +30,19 @@ export default defineConfig({
       ],
       sidebar: [
         {
-          label: "Guides",
-          translations: { ru: "Руководства", uk: "Посібники" },
+          label: "Get started",
+          translations: { ru: "Начало работы", uk: "Початок роботи" },
           items: [
             {
-              label: "Example Guide",
-              translations: {
-                ru: "Пример руководства",
-                uk: "Приклад посібника",
-              },
-              slug: "guides/example",
+              label: "Readme",
+              slug: "getting-started/readme",
             },
           ],
         },
         {
-          label: "Reference",
-          translations: { ru: "Справочник", uk: "Довідник" },
-          items: [{ autogenerate: { directory: "reference" } }],
+          label: "Rules",
+          translations: { ru: "Правила", uk: "Правила" },
+          items: [{ autogenerate: { directory: "rules" } }],
         },
       ],
     }),

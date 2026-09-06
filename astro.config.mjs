@@ -5,8 +5,8 @@ import { defineConfig } from "astro/config";
 
 // https://astro.build/config
 export default defineConfig({
-  site: process.env.ASTRO_SITE ?? "https://redwestdev.github.io",
-  base: process.env.ASTRO_BASE ?? "/tree-lint-site",
+  site: "https://tree-lint.dev",
+  base: "/",
   integrations: [
     starlight({
       title: "Tree Lint",

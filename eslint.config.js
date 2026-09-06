@@ -18,6 +18,15 @@ export default [
   },
 
   {
+    files: ["*.config.mjs", "*.config.js", "*.config.ts"],
+    languageOptions: {
+      globals: {
+        process: "readonly",
+      },
+    },
+  },
+
+  {
     ignores: ["dist/", ".astro/", "node_modules/"],
   },
 ];

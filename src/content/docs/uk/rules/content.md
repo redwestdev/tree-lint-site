@@ -108,7 +108,7 @@ title: Правила валідації
 ```typescript
 callback: (
   node: Node,
-  results?: Partial<Record<string, IValidationResult>>[],
+  results?: Partial<Record<string, IValidationResult>>[]
 ) => boolean;
 ```
 
@@ -122,7 +122,7 @@ interface IValidationResult {
   result: boolean; // true, якщо перевірка пройдена
   violation?: {
     // Дані про помилку, якщо перевірка не пройдена
-    type: "error" | "warning";
+    type: 'error' | 'warning';
     path: string;
     message: string;
   };
@@ -136,7 +136,7 @@ interface IValidationResult {
 ```
 {
   custom: {
-    type: error,
+    type: 'error',
     callback: (node) => {
       // Перевірка: файли .ts не повинні бути порожніми
       if (node.extension === 'ts') {
@@ -145,6 +145,7 @@ interface IValidationResult {
       return true;
     }
   }
+}
 ```
 
 #### Перевірка сутності:
@@ -152,7 +153,7 @@ interface IValidationResult {
 ```
 {
   custom: {
-    type: warning,
+    type: 'warning',
     callback: (node) => {
       // Перевірка: сутність 'feature' повинна містити файли
       if (node.entity === 'feature') {
@@ -172,17 +173,17 @@ custom: {
   type: "error",
   message: "Критична помилка: жодне правило валідації не пройдено!",
   callback: (node, results) => {
-      // Якщо масив results порожній, значить не було інших правил - пропускаємо
+      // Якщо масив results порожній, це означає, що інших правил не було — пропускаємо
       if (!results || results.length === 0) return true;
 
       // Перевіряємо, чи є хоча б одна успішно пройдена перевірка
       const hasPassed = results.some(ruleResult => {
-        // ruleResult - це об'єкт типу { [ruleName]: IValidationResult }
+        // ruleResult — це об'єкт типу { [ruleName]: IValidationResult }
         // Нам потрібно витягти всі значення (це IValidationResult)
         return Object.values(ruleResult).some(res => res.result === true);
       });
 
-      // Якщо hasPassed === false, значить ВСІ перевірки провалені
+      // Якщо hasPassed === false, це означає, що ВСІ перевірки провалені
       return hasPassed;
     }
   }

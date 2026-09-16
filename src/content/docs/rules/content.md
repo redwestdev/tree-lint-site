@@ -108,7 +108,7 @@ The callback function `callback(node)` receives an object, the structure of whic
 ```typescript
 callback: (
   node: Node,
-  results?: Partial<Record<string, IValidationResult>>[],
+  results?: Partial<Record<string, IValidationResult>>[]
 ) => boolean;
 ```
 
@@ -122,7 +122,7 @@ interface IValidationResult {
   result: boolean; // true, if check passed
   violation?: {
     // Error data, if check failed
-    type: "error" | "warning";
+    type: 'error' | 'warning';
     path: string;
     message: string;
   };
@@ -136,7 +136,7 @@ interface IValidationResult {
 ```
 {
   custom: {
-    type: error,
+    type: 'error',
     callback: (node) => {
       // Check: .ts files must not be empty
       if (node.extension === 'ts') {
@@ -145,6 +145,7 @@ interface IValidationResult {
       return true;
     }
   }
+}
 ```
 
 #### Entity check:
@@ -152,7 +153,7 @@ interface IValidationResult {
 ```
 {
   custom: {
-    type: warning,
+    type: 'warning',
     callback: (node) => {
       // Check: 'feature' entity must contain files
       if (node.entity === 'feature') {

@@ -3,7 +3,7 @@ title: Tree-lint
 description: Tree-lint is a file structure linter that helps maintain architectural order and prevents chaos in projects.
 ---
 
-import { Tabs, TabItem, LinkButton } from "@astrojs/starlight/components";
+import { Tabs, TabItem, LinkButton } from '@astrojs/starlight/components';
 
 Tree-lint is a file structure linter that helps maintain architectural order and prevents chaos in projects.
 
@@ -29,10 +29,26 @@ The main tasks the linter covers are:
 
 <Tabs syncKey="pkg">
   <TabItem label="npm">
-    ```bash npm install -D @redwestdev/tree-lint ```
+
+    ```bash
+    npm install -D @redwestdev/tree-lint
+    ```
+
   </TabItem>
-  <TabItem label="pnpm">```bash pnpm add -D @redwestdev/tree-lint ```</TabItem>
-  <TabItem label="yarn">```bash yarn add -D @redwestdev/tree-lint ```</TabItem>
+  <TabItem label="pnpm">
+
+    ```bash
+    pnpm add -D @redwestdev/tree-lint
+    ```
+
+  </TabItem>
+  <TabItem label="yarn">
+
+    ```bash
+    yarn add -D @redwestdev/tree-lint
+    ```
+
+  </TabItem>
 </Tabs>
 
 ## Quick Start
@@ -55,10 +71,10 @@ The command creates a `tree-lint.config` file in the current directory. Both int
 tree-lint init --format ts --type deep-tree
 ```
 
-| Flag             | Values             | Description               |
-| ---------------- | ------------------ | ------------------------- |
-| `-f`, `--format` | ts, js, json, yaml | Configuration file format |
-| `-t`, `--type`   | default, deep-tree | Configuration template    |
+| Flag                      | Values             | Description               |
+| ------------------------- | ------------------ | ------------------------- |
+| `-f`, `--format <format>` | ts, js, json, yaml | Configuration file format |
+| `-t`, `--type <type>`     | default, deep-tree | Configuration template    |
 
 Example project structure:
 
@@ -75,41 +91,41 @@ src/
 and configuration file:
 
 ```typescript
-import { createConfig } from "tree-lint";
+import { createConfig } from '@redwestdev/tree-lint';
 
 export default createConfig({
-  roots: ["src"], // directories to scan
-  ignore: ["node_modules", "dist", "**/**/*.test.ts"], // exclusions, you can use patterns
+  roots: ['src'], // directories to scan
+  ignore: ['node_modules', 'dist', '**/*.test.ts'], // exclusions, you can use patterns
 
   entities: {
     component: {
       matches: {
-        type: "directory",
-        name: "[A-Z]*",
+        type: 'directory',
+        name: '[A-Z]*',
         children: [
-          { type: "file", name: "*.tsx" },
-          { type: "file", name: "index.ts" },
+          { type: 'file', name: '*.tsx' },
+          { type: 'file', name: 'index.ts' },
         ],
       },
       rules: {
-        nameLength: { type: "error", max: 20, min: 5 },
+        nameLength: { type: 'error', max: 20, min: 5 },
       },
     },
   },
 
   layers: {
     components: {
-      entities: ["component"],
+      entities: ['component'],
     },
   },
 });
 ```
 
 <LinkButton
-  icon="right-arrow"
-  iconPlacement="end"
-  variant="minimal"
-  href="/rules/content/"
+  icon='right-arrow'
+  iconPlacement='end'
+  variant='minimal'
+  href='/rules/content/'
 >
   See more details about the validation rules
 </LinkButton>

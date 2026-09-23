@@ -1,32 +1,32 @@
-import js from "@eslint/js";
-import astro from "eslint-plugin-astro";
-import simpleImportSort from "eslint-plugin-simple-import-sort";
-import tseslint from "typescript-eslint";
+import js from '@eslint/js';
+import astro from 'eslint-plugin-astro';
+import simpleImportSort from 'eslint-plugin-simple-import-sort';
+import tseslint from 'typescript-eslint';
 
 export default [
   js.configs.recommended,
   ...tseslint.configs.recommended,
-  ...astro.configs["flat/recommended"],
+  ...astro.configs['flat/recommended'],
   {
     plugins: {
-      "simple-import-sort": simpleImportSort,
+      'simple-import-sort': simpleImportSort,
     },
     rules: {
-      "simple-import-sort/imports": "error",
-      "simple-import-sort/exports": "error",
+      'simple-import-sort/imports': 'error',
+      'simple-import-sort/exports': 'error',
     },
   },
 
   {
-    files: ["*.config.mjs", "*.config.js", "*.config.ts"],
+    files: ['*.config.mjs', '*.config.js', '*.config.ts'],
     languageOptions: {
       globals: {
-        process: "readonly",
+        process: 'readonly',
       },
     },
   },
 
   {
-    ignores: ["dist/", ".astro/", "node_modules/"],
+    ignores: ['dist/', '.astro/', 'node_modules/'],
   },
 ];

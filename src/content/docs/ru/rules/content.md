@@ -108,7 +108,7 @@ title: Правила валидации
 ```typescript
 callback: (
   node: Node,
-  results?: Partial<Record<string, IValidationResult>>[],
+  results?: Partial<Record<string, IValidationResult>>[]
 ) => boolean;
 ```
 
@@ -122,7 +122,7 @@ interface IValidationResult {
   result: boolean; // true, если проверка пройдена
   violation?: {
     // Данные об ошибке, если проверка не пройдена
-    type: "error" | "warning";
+    type: 'error' | 'warning';
     path: string;
     message: string;
   };
@@ -136,7 +136,7 @@ interface IValidationResult {
 ```
 {
   custom: {
-    type: error,
+    type: 'error',
     callback: (node) => {
       // Проверка: файлы .ts не должны быть пустыми
       if (node.extension === 'ts') {
@@ -145,6 +145,7 @@ interface IValidationResult {
       return true;
     }
   }
+}
 ```
 
 #### Проверка сущности:
@@ -152,7 +153,7 @@ interface IValidationResult {
 ```
 {
   custom: {
-    type: warning,
+    type: 'warning',
     callback: (node) => {
       // Проверка: сущность 'feature' должна содержать файлы
       if (node.entity === 'feature') {
@@ -172,12 +173,12 @@ custom: {
   type: "error",
   message: "Критическая ошибка: ни одно правило валидации не пройдено!",
   callback: (node, results) => {
-      // Если массив results пуст, значит не было других правил - пропускаем
+      // Если массив results пуст, значит не было других правил — пропускаем
       if (!results || results.length === 0) return true;
 
       // Проверяем, есть ли хотя бы одна успешно пройденная проверка
       const hasPassed = results.some(ruleResult => {
-        // ruleResult - это объект типа { [ruleName]: IValidationResult }
+        // ruleResult — это объект типа { [ruleName]: IValidationResult }
         // Нам нужно извлечь все значения (это IValidationResult)
         return Object.values(ruleResult).some(res => res.result === true);
       });
@@ -187,5 +188,4 @@ custom: {
     }
   }
 }
-
 ```

@@ -1,0 +1,38 @@
+---
+title: Tree-lint
+description: Tree-lint is a file structure linter that helps maintain architectural order and prevents chaos in projects.
+---
+
+import { CardGrid, LinkCard } from "@astrojs/starlight/components";
+
+Tree-lint is a file structure linter that helps maintain architectural order and prevents chaos in projects.
+
+> Tree-lint is not tied to a specific architecture. You define your architecture in the configuration, and Tree-lint checks for compliance. It supports Deep Tree, FSD, monorepos, and any other approaches where you can define distinct layers and entities.
+
+## Why use Tree-lint?
+
+The main tasks the linter covers are:
+
+- **Architectural Integrity Control** - Allows you to fix rules for placing files and folders. The linter automatically monitors violations: for example, when components get into the utilities folder or project layers are mixed up.
+
+- **Adherence to Team Agreements** - Turns architectural rules into a specification. This helps developers adhere to a unified development standard, minimizing disputes about where things should be placed.
+
+- **Simplifying Onboarding** - The linter configuration serves as visual documentation. A new team member can quickly study the structure without wasting time looking for answers.
+
+- **Flexible Work in Monorepos** - Allows you to set separate rules for different parts of the project. Each team can adhere to its own architecture without violating the general monorepo standards.
+
+- **Legacy Project Audit** - The tool allows you to quickly assess the state of the file structure. This is indispensable when taking over projects with accumulated technical debt to understand how much the current organization of files corresponds to the target model.
+
+- **Incremental Refactoring** - Introducing a new architecture to a legacy codebase? Enforce rules only on new code while ignoring old files via `ignore` patterns. No need to refactor everything at once to start benefiting from the linter.
+
+## Next steps
+
+<CardGrid>
+  <LinkCard title="Installation" href="/en/getting-started/installation/" />
+  <LinkCard title="Quick start" href="/en/getting-started/quick-start/" />
+  <LinkCard
+    title="Architecture examples"
+    href="/en/getting-started/architecture-examples/"
+  />
+  <LinkCard title="Validation rules" href="/en/rules/" />
+</CardGrid>

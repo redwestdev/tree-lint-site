@@ -1,0 +1,90 @@
+---
+title: Using the custom() check
+description: "Callback signature, IValidationResult structure, and custom check examples."
+---
+
+## Callback signature:
+
+```typescript
+callback: (
+  node: Node,
+  results?: Partial<Record<string, IValidationResult>>[],
+) => boolean;
+```
+
+- `results` — is an array of check results that were performed for this specific node during the current scan.
+- Only those checks for which parameters were explicitly specified in the config (e.g., `nameLength`, `size`, `lineCount`, etc.) are included in `results`.
+
+## `IValidationResult` structure:
+
+```typescript
+interface IValidationResult {
+  result: boolean; // true, if check passed
+  violation?: {
+    // Error data, if check failed
+    type: "error" | "warning";
+    path: string;
+    message: string;
+  };
+}
+```
+
+## `custom()` usage examples:
+
+### File check:
+
+```
+{
+  custom: {
+    type: error,
+    callback: (node) => {
+      // Check: .ts files must not be empty
+      if (node.extension === 'ts') {
+        return node.lines > 0;
+      }
+      return true;
+    }
+  }
+```
+
+### Entity check:
+
+```
+{
+  custom: {
+    type: warning,
+    callback: (node) => {
+      // Check: 'feature' entity must contain files
+      if (node.entity === 'feature') {
+        return node.children.length > 0;
+      }
+      return true;
+    }
+  }
+}
+```
+
+### Example using `results`:
+
+```
+{
+custom: {
+  type: "error",
+  message: "Critical error: no validation rule passed!",
+  callback: (node, results) => {
+      // If the results array is empty, it means there were no other rules - skip
+      if (!results || results.length === 0) return true;
+
+      // Check if there is at least one successfully passed check
+      const hasPassed = results.some(ruleResult => {
+        // ruleResult - is an object of type { [ruleName]: IValidationResult }
+        // We need to extract all values (this is IValidationResult)
+        return Object.values(ruleResult).some(res => res.result === true);
+      });
+
+      // If hasPassed === false, it means ALL checks failed
+      return hasPassed;
+    }
+  }
+}
+```

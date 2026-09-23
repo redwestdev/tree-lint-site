@@ -1,0 +1,29 @@
+---
+title: Validation Rules
+description: "List of available Tree-lint rules and their parameters."
+---
+
+import { CardGrid, LinkCard } from "@astrojs/starlight/components";
+
+| Rule             | Description           | Parameters            | Applicable to |
+| :--------------- | :-------------------- | :-------------------- | :------------ |
+| `name`           | Naming (glob)         | `pattern` (string)    | All           |
+| `nameLength`     | Name length           | `min`, `max` (number) | All           |
+| `size`           | Size                  | `min`, `max` (number) | All           |
+| `lineCount`      | Number of lines       | `min`, `max` (number) | Files         |
+| `childrenAmount` | Number of child nodes | `min`, `max` (number) | Folders       |
+| `isEmpty`        | Emptiness check       | —                     | All           |
+| `custom()`       | Custom check          | `callback` (function) | All           |
+
+Custom check is only available in `.ts` and `.js` format configs. In `.json` and `.yaml` format configs, only predefined rules (e.g., `name`, `size`, `lineCount`, etc.) can be used with their parameters.
+
+## Next steps
+
+<CardGrid>
+  <LinkCard
+    title="Configuration examples"
+    href="/en/rules/configuration-examples/"
+  />
+  <LinkCard title="Node fields" href="/en/rules/node-fields/" />
+  <LinkCard title="Custom checks" href="/en/rules/custom-usage/" />
+</CardGrid>

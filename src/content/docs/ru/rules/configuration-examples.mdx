@@ -1,0 +1,36 @@
+---
+title: Примеры конфигурации
+description: "Примеры описания правил в конфиге Tree-lint."
+---
+
+```json
+{
+  "name": {
+    "pattern": "^[a-z0-9-]+$",
+    "type": "error",
+    "message": "Имя должно содержать только строчные буквы, цифры и дефисы"
+  },
+  "nameLength": {
+    "min": 3,
+    "max": 20,
+    "type": "warning"
+  },
+  "size": {
+    "min": 100,
+    "max": 5000,
+    "type": "error"
+  },
+  "lineCount": {
+    "max": 200,
+    "type": "error"
+  },
+  "childrenAmount": {
+    "min": 1,
+    "max": 10,
+    "type": "error"
+  },
+  "isEmpty": {
+    "type": "error"
+  }
+}
+```

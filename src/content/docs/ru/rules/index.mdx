@@ -1,0 +1,29 @@
+---
+title: Правила валидации
+description: "Список доступных правил Tree-lint и их параметры."
+---
+
+import { CardGrid, LinkCard } from "@astrojs/starlight/components";
+
+| Правило          | Описание              | Параметры             | Применимо к |
+| :--------------- | :-------------------- | :-------------------- | :---------- |
+| `name`           | Именование (glob)     | `pattern` (string)    | Все         |
+| `nameLength`     | Длина имени           | `min`, `max` (number) | Все         |
+| `size`           | Размер                | `min`, `max` (number) | Все         |
+| `lineCount`      | Кол-во строк          | `min`, `max` (number) | Файлы       |
+| `childrenAmount` | Кол-во дочерних узлов | `min`, `max` (number) | Папки       |
+| `isEmpty`        | Проверка пустоты      | —                     | Все         |
+| `custom()`       | Произвольная проверка | `callback` (function) | Все         |
+
+Произвольная проверка доступна только в конфигах формата `.ts` и `.js`. В конфигах формата `.json` и `.yaml` можно использовать только предопределенные правила (напр., `name`, `size`, `lineCount` и т.д.) с их параметрами.
+
+## Что дальше
+
+<CardGrid>
+  <LinkCard
+    title="Примеры конфигурации"
+    href="/ru/rules/configuration-examples/"
+  />
+  <LinkCard title="Поля node" href="/ru/rules/node-fields/" />
+  <LinkCard title="Проверка custom()" href="/ru/rules/custom-usage/" />
+</CardGrid>

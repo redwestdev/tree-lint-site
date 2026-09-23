@@ -1,0 +1,48 @@
+---
+title: Приклади архітектур
+description: "Приклади конфігурацій Tree-lint: Deep Tree, Feature-Sliced Design і монорепо."
+---
+
+## Deep Tree
+
+```bash
+entities: {
+  component: { /* ... */ },
+  section: { /* ... */ },
+  page: { /* ... */ },
+  hook: { /* ... */ },
+},
+
+layers: {
+  components: { entities: ["component"] },
+  sections: { entities: ["section"] },
+  pages: { entities: ["page"] },
+  hooks: { entities: ["hook"] },
+}
+```
+
+## Feature-Sliced Design (FSD)
+
+```bash
+entities: {
+  feature: { /* ... */ },
+  widget: { /* ... */ },
+  entity: { /* ... */ },
+},
+
+layers: {
+  app: { /* ... */ },
+  pages: { /* ... */ },
+  widgets: { entities: ["widget"] },
+  features: { entities: ["feature"] },
+  entities: { entities: ["entity"] },
+  shared: { /* ... */ },
+}
+```
+
+## Монорепо
+
+```typescript
+roots: ["packages/ui", "packages/core", "packages/api"],
+// кожен корінь сканується незалежно
+```

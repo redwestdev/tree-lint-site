@@ -1,0 +1,90 @@
+---
+title: Використання перевірки custom()
+description: "Сигнатура callback, структура IValidationResult та приклади кастомних перевірок."
+---
+
+## Сигнатура колбека:
+
+```typescript
+callback: (
+  node: Node,
+  results?: Partial<Record<string, IValidationResult>>[],
+) => boolean;
+```
+
+- `results` — це масив результатів перевірок, які були виконані для цього конкретного вузла в рамках поточного сканування.
+- До `results` потрапляють лише ті перевірки, для яких у конфігу були явно вказані параметри (напр., `nameLength`, `size`, `lineCount` тощо).
+
+## Структура `IValidationResult`:
+
+```typescript
+interface IValidationResult {
+  result: boolean; // true, якщо перевірка пройдена
+  violation?: {
+    // Дані про помилку, якщо перевірка не пройдена
+    type: "error" | "warning";
+    path: string;
+    message: string;
+  };
+}
+```
+
+## Приклади використання `custom()`:
+
+### Перевірка файлу:
+
+```
+{
+  custom: {
+    type: error,
+    callback: (node) => {
+      // Перевірка: файли .ts не повинні бути порожніми
+      if (node.extension === 'ts') {
+        return node.lines > 0;
+      }
+      return true;
+    }
+  }
+```
+
+### Перевірка сутності:
+
+```
+{
+  custom: {
+    type: warning,
+    callback: (node) => {
+      // Перевірка: сутність 'feature' повинна містити файли
+      if (node.entity === 'feature') {
+        return node.children.length > 0;
+      }
+      return true;
+    }
+  }
+}
+```
+
+### Приклад з використанням `results`:
+
+```
+{
+custom: {
+  type: "error",
+  message: "Критична помилка: жодне правило валідації не пройдено!",
+  callback: (node, results) => {
+      // Якщо масив results порожній, значить не було інших правил - пропускаємо
+      if (!results || results.length === 0) return true;
+
+      // Перевіряємо, чи є хоча б одна успішно пройдена перевірка
+      const hasPassed = results.some(ruleResult => {
+        // ruleResult - це об'єкт типу { [ruleName]: IValidationResult }
+        // Нам потрібно витягти всі значення (це IValidationResult)
+        return Object.values(ruleResult).some(res => res.result === true);
+      });
+
+      // Якщо hasPassed === false, значить ВСІ перевірки провалені
+      return hasPassed;
+    }
+  }
+}
+```

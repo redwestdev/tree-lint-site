@@ -1,0 +1,47 @@
+---
+title: Available fields in the node object inside custom()
+description: "Fields of the node object available inside the custom() check callback."
+---
+
+The callback function `callback(node)` receives an object, the structure of which depends on the node type.
+
+## 1. Basic fields (available in all nodes)
+
+```
+{
+  name: string;        // Name of the file or folder
+  path: string;        // Full path to the node
+  size: number;        // Size in bytes
+  ignored: boolean;    // Is ignored by the configuration file
+  unreadable: boolean; // Reading error
+  hidden: boolean;     // Is hidden (name starts with ".")
+}
+```
+
+## 2. Additional fields for files (`FileNode`, `FileEntity`)
+
+```
+{
+  ...BaseFields,
+  extension: string;   // File extension (e.g., "ts")
+  lines: number;       // Number of lines in the file
+}
+```
+
+## 3. Additional fields for directories (`DirNode`, `LayerNode`, `GroupNode`, `DirEntity`)
+
+```
+{
+  ...BaseFields,
+  children: TAnyNode[]; // Array of child nodes
+}
+```
+
+## 4. Additional fields for entities (`FileEntity`, `DirEntity`)
+
+```
+{
+ ...BaseFields/FileFields/DirFields,
+ entity: string;      // Entity type from configuration
+}
+```

@@ -1,0 +1,47 @@
+---
+title: Доступні поля в об'єкті node всередині custom()
+description: "Поля об'єкта node, доступні всередині callback кастомної перевірки custom()."
+---
+
+У функцію зворотного виклику `callback(node)` передається об'єкт, структура якого залежить від типу вузла.
+
+## 1. Базові поля (доступні в усіх нодах)
+
+```
+{
+  name: string;        // Ім'я файлу або папки
+  path: string;        // Повний шлях до вузла
+  size: number;        // Розмір у байтах
+  ignored: boolean;    // Чи ігнорується файлом конфігурації
+  unreadable: boolean; // Помилка читання
+  hidden: boolean;     // Чи є прихованим (ім'я починається з ".")
+}
+```
+
+## 2. Додаткові поля для файлів (`FileNode`, `FileEntity`)
+
+```
+{
+  ...BaseFields,
+  extension: string;   // Розширення файлу (напр., "ts")
+  lines: number;       // Кількість рядків у файлі
+}
+```
+
+## 3. Додаткові поля для директорій (`DirNode`, `LayerNode`, `GroupNode`, `DirEntity`)
+
+```
+{
+  ...BaseFields,
+  children: TAnyNode[]; // Масив дочірніх вузлів
+}
+```
+
+## 4. Додаткові поля для сутностей (`FileEntity`, `DirEntity`)
+
+```
+{
+ ...BaseFields/FileFields/DirFields,
+ entity: string;      // Тип сутності з конфігурації
+}
+```

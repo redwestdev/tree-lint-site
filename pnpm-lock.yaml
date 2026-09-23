@@ -31,8 +31,8 @@ importers:
         specifier: ^10.0.1
         version: 10.0.1(eslint@10.8.1(jiti@2.7.0))
       '@redwestdev/tree-lint':
-        specifier: 0.0.3
-        version: 0.0.3
+        specifier: ^0.0.5
+        version: 0.0.5
       eslint:
         specifier: ^10.8.1
         version: 10.8.1(jiti@2.7.0)
@@ -726,8 +726,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@redwestdev/tree-lint@0.0.3':
-    resolution: {integrity: sha512-TyYIwl6Lgas5ibZn6g5tJEmOWBgIwdIqN8bvMqhhojhG3xmS50zGKMHvD0WLup/bk8dwmWx05pTWSJ3csDG7sA==}
+  '@redwestdev/tree-lint@0.0.5':
+    resolution: {integrity: sha512-BzvSvnUvWN9MIvWG61FZNt29zCgEr9hsrKFBdJkUnTXkW0T/jVEIc1thmZtUKQxz3foI8xosCpT9HTGWgIAcdg==}
     engines: {node: '>=18.0.0'}
     hasBin: true
 
@@ -3332,7 +3332,7 @@ snapshots:
   '@pagefind/windows-x64@1.5.2':
     optional: true
 
-  '@redwestdev/tree-lint@0.0.3':
+  '@redwestdev/tree-lint@0.0.5':
     dependencies:
       chalk: 5.6.2
       commander: 14.0.3

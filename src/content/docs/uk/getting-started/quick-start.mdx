@@ -1,156 +1,144 @@
 ---
 title: Швидкий старт
-description: Створіть конфіг, запустіть сканування та розберіть результати перевірки.
+description: 'Один наскрізний приклад: знайти порушення структури, виправити його та закріпити перевірку в команді.'
 ---
 
-import { LinkButton } from "@astrojs/starlight/components";
+import { LinkButton, Tabs, TabItem } from '@astrojs/starlight/components';
 
-## 1. Створіть конфіг
+Цей розділ — один наскрізний приклад: від встановлення до виправленого порушення. Усі команди та конфіг належать одному невеликому проєкту, тож кроки можна проходити по порядку і повторювати на власному проєкті.
 
-У корені проекту виконайте команду для створення шаблону конфігу:
+Уявіть, що команда домовилася про структуру компонентів:
 
-```bash
-tree-lint init
-```
+- кожен компонент живе в окремій папці всередині `src/components`;
+- ім'я папки починається з великої літери і не довше ніж 20 символів;
+- у папці мають бути файл із розширенням `.tsx` та файл `index.ts`.
 
-Команда створює файл `tree-lint.config` у поточному каталозі. Підтримується інтерактивний та неінтерактивний режим.
+Папка `VeryLongComponentName` порушує друге правило: її ім'я — 22 символи.
 
-**Інтерактивний режим** (TTY-термінал поза CI) — команда запитає відсутні параметри через prompt і запропонує підтвердження перед створенням файлу. Якщо вибір не влаштовує, можна повернутися й вказати параметри знову.
+Почнемо з невеликого проєкту з такою структурою:
 
-**Неінтерактивний режим** (CI) — усі параметри мають бути передані явно через прапорці:
-
-```bash
-tree-lint init --format ts --type deep-tree
-```
-
-| Прапорець                 | Можливі значення   | Опис                      |
-| ------------------------- | ------------------ | ------------------------- |
-| `-f`, `--format <format>` | ts, js, json, yaml | Формат файлу конфігурації |
-| `-t`, `--type <type>`     | default, deep-tree | Шаблон конфігурації       |
-
-Приклад структури проекту:
-
-```
+```text
 src/
-├── components/
-│   └── Button/
-│       ├── Button.tsx
-│       └── index.ts
-└── pages/
-    └── Home/
+└── components/
+    └── VeryLongComponentName/
+        ├── VeryLongComponentName.tsx
+        └── index.ts
 ```
 
-та файлу конфігурації:
+Створіть його в папці навчального проєкту — наприклад, `my-tree-lint-demo` — або візьміть наявний проєкт зі схожою структурою. Усі наступні кроки виконуються всередині цього проєкту.
 
-```typescript
-import { createConfig } from "tree-lint";
+## 1. Встановіть пакет
+
+<Tabs syncKey='pkg'>
+  <TabItem label='npm'>
+    ```bash npm install -D @redwestdev/tree-lint ```
+  </TabItem>
+  <TabItem label='pnpm'>```bash pnpm add -D @redwestdev/tree-lint ```</TabItem>
+  <TabItem label='yarn'>```bash yarn add -D @redwestdev/tree-lint ```</TabItem>
+</Tabs>
+
+Подробиці встановлення та локального запуску команди — у розділі [Встановлення](/uk/getting-started/installation/).
+
+## 2. Опишіть домовленості в конфігу
+
+Створіть файл `tree-lint.config.ts` у корені проєкту:
+
+```ts
+import { createConfig } from '@redwestdev/tree-lint';
 
 export default createConfig({
-  roots: ["src"], // директорії для сканування
-  ignore: ["node_modules", "dist", "**/**/*.test.ts"], // виключення, можна використовувати паттерни
+  roots: ['src'], // де сканувати
+  ignore: ['node_modules', 'dist'], // що пропускати
 
   entities: {
     component: {
       matches: {
-        type: "directory",
-        name: "[A-Z]*",
+        type: 'directory',
+        name: '[A-Z]*', // ім'я папки починається з великої літери
         children: [
-          { type: "file", name: "*.tsx" },
-          { type: "file", name: "index.ts" },
+          // обов'язковий склад папки компонента
+          { type: 'file', name: '*.tsx' },
+          { type: 'file', name: 'index.ts' },
         ],
       },
       rules: {
-        nameLength: { type: "error", max: 20, min: 5 },
+        nameLength: {
+          type: 'error',
+          max: 20,
+          message: "Ім'я папки компонента задовге: вкладіться у 20 символів.",
+        },
       },
     },
   },
 
   layers: {
     components: {
-      entities: ["component"],
+      entities: ['component'], // шукати компоненти всередині папок components
     },
   },
 });
 ```
 
-Підтримувані формати файлів конфігурації:
+Що тут описано:
 
-- `tree-lint.config.ts` (рекомендовано)
-- `tree-lint.config.js`
-- `tree-lint.config.json`
-- `tree-lint.config.yaml`
+- `matches` — як **розпізнати** компонент: папка з іменем, що починається з великої літери, та обов'язковим складом — файл `.tsx` та `index.ts`. Саме розпізнавання не виводить помилок — воно лише вирішує, де застосовуються правила.
+- `rules.nameLength` — **перевірка** для кожної розпізнаної папки: довжина імені не має перевищувати 20 символів. `message` — ваш власний текст помилки.
+- `layers.components` — компоненти розпізнаються лише всередині папок з іменем `components` на будь-якій глибині в `roots`.
 
-При використанні конфігурацій у форматі `json` або `yaml` функціональність буде обмежена (немає підтримки кастомних правил через callback).
+Як ці секції працюють разом — детально в [Концепціях](/uk/getting-started/concepts/).
 
-### Безпека
+## 3. Запустіть перевірку
 
-> Конфігурація виконується як код (TypeScript).
->
-> **Важливо:** Використовуйте Tree-lint лише з довіреними конфігураціями. Якщо ви берете конфіг зі стороннього джерела, переконайтеся в його безпеці, оскільки він може містити шкідливий код.
+<Tabs syncKey='pkg'>
+  <TabItem label='npm'>```bash npx tree-lint scan ```</TabItem>
+  <TabItem label='pnpm'>```bash pnpm exec tree-lint scan ```</TabItem>
+  <TabItem label='yarn'>```bash yarn tree-lint scan ```</TabItem>
+</Tabs>
 
-## 2. Запустіть сканування
+Вивід показує знайдене порушення:
 
-```bash
-tree-lint scan
+```text
+src/components/VeryLongComponentName
+  ✖ Ім'я папки компонента задовге: вкладіться у 20 символів.
+
+Errors: 1, warnings: 0.
+
+✖ Validation failed.
 ```
 
-### Прапорці (flags) CLI
+Що важливо в цьому виводі:
 
-Підтримувані прапорці для команди `scan`:
+- порушення належить папці `VeryLongComponentName` — сканування починається від `src`;
+- текст помилки — ваш власний `message`, а не службове повідомлення;
+- за наявності помилок команда завершується з кодом `1`, тож перевірку можна вбудувати в CI.
 
-| Прапорець                         | Опис                                                                |
-| --------------------------------- | ------------------------------------------------------------------- |
-| `-t`, `--tree-output [file]`      | Експортувати JSON-дерево                                            |
-| `-a`, `--annotated-output [file]` | Експортувати анотоване дерево                                       |
-| `-v`, `--vitals`                  | Показати метрики продуктивності                                     |
-| `-p`, `--print-tree`              | Вивести дерево в термінал                                           |
-| `-c`, `--config-path [path]`      | Вказати шлях до конфігурації (за замовчуванням шукає в корені)      |
-| `-g`, `--group-by <type>`         | Змінити групування результатів сканування (за замовчуванням "path") |
+Самі попередження не змінюють код виходу: з `Errors: 0` команда завершується з кодом `0`.
 
-Можливі значення для `--group-by`:
+## 4. Виправте порушення і запустіть ще раз
 
-- `path` (за замовчуванням) - групування за шляхом у файловій системі:
+Перейменуйте папку разом із файлом усередині:
 
-  ```bash
-  /src/views/HomePage/sections/MapSection/images/mw.svg
-  ⚠ File size exceeds or falls short of the allowed configuration limits
+```text
+src/
+└── components/
+    └── Icon/
+        ├── Icon.tsx
+        └── index.ts
+```
 
-  /src/views/HomePage/sections/MapSection/images/projects.svg
-  ⚠ File size exceeds or falls short of the allowed configuration limits
+і повторіть команду сканування:
 
-  /src/views/HomePage/sections/MapSection
-  ✖ Custom validation error: Custom rule must return a boolean, but returned object
-  ```
+```text
+Errors: 0, warnings: 0.
 
-- `severity` - групування за рівнем помилки (`error`, `warning`):
+✔ Validation complete successfully!
+```
 
-  ```bash
-  ✖ ERRORS:
-  Custom validation error: Custom rule must return a boolean, but returned object
-    - /src/layouts/MainLayout/sections/FooterSct
+Перевірка пройдена: структура відповідає конфігу, і наступне таке порушення буде знайдено ще до рев'ю.
 
-  ⚠ WARNINGS:
-  It looks as component, but composition of child elements is invalid.
-    - /src/layouts/MainLayout/components/NewAwesomeComponent
-  Name of section does not match the required pattern or convention.
-    - /src/layouts/MainLayout/sections/.HeaderSct
-  ```
+## 5. Закріпіть перевірку в команді
 
-- `rule` - групування за правилом, яке було порушене:
-
-  ```bash
-  It looks as component, but composition of child elements is invalid.
-    ⚠ /src/layouts/MainLayout/components/NewAwesomeComponent
-
-  Name of section does not match the required pattern or convention.
-    ⚠ /src/layouts/MainLayout/sections/.HeaderSct
-
-  Custom validation error: Custom rule must return a boolean, but returned object
-    ✖ /src/layouts/MainLayout/sections/FooterSct
-    ✖ /src/layouts/MainLayout/sections/SidebarSct
-  ```
-
-Для зручності запуску сканування можна додати скрипт у `package.json`:
+Додайте скрипт у `package.json`:
 
 ```json
 {
@@ -160,34 +148,137 @@ tree-lint scan
 }
 ```
 
-## 3. Перевірте результат сканування
+Тепер локально можна запускати `npm run lint:tree`, `pnpm lint:tree` або `yarn lint:tree`.
 
-```text
-Errors: 0, warnings: 0.
+У CI достатньо викликати той самий скрипт — крок упаде на першій помилці:
 
-✔ Validation complete successfully!
+```yaml
+- name: Lint file structure
+  run: pnpm lint:tree
 ```
 
-```text
-/src/views/HomePage/sections/MapSection/images/mw.svg
-⚠ File size exceeds or falls short of the allowed configuration limits
+Той самий виклик пасує й хуку pre-commit:
 
-/src/views/HomePage/sections/MapSection/images/projects.svg
-⚠ File size exceeds or falls short of the allowed configuration limits
-
-/src/views/HomePage/sections/MapSection
-✖ Custom validation error: Custom rule must return a boolean, but returned object
-
-Errors: 1, warnings: 2.
-
-✖ Validation failed.
+```bash
+# .husky/pre-commit
+pnpm lint:tree
 ```
+
+---
+
+Далі — довідковий матеріал: створення конфіга через `init`, формати файлів, прапорці `scan` і типові проблеми. Для першого запуску він не потрібен.
+
+## Створення конфіга через `init`
+
+Замість того, щоб писати файл вручну, можна згенерувати шаблон конфіга:
+
+```bash
+tree-lint init
+```
+
+Команда створює файл `tree-lint.config` у поточному каталозі. Підтримуються інтерактивний і неінтерактивний режими.
+
+**Інтерактивний режим** (термінал із TTY поза CI) — команда запитує відсутні параметри та просить підтвердження перед створенням файлу. Якщо вибір не влаштовує, можна повернутися і вказати параметри знову.
+
+**Неінтерактивний режим** (CI) — усі параметри потрібно передати явно через прапорці:
+
+```bash
+tree-lint init --format ts --type deep-tree
+```
+
+| Прапорець                 | Можливі значення   | Опис                      |
+| ------------------------- | ------------------ | ------------------------- |
+| `-f`, `--format <format>` | ts, js, json, yaml | Формат файла конфігурації |
+| `-t`, `--type <type>`     | default, deep-tree | Шаблон конфігурації       |
+
+Доступні два шаблони:
+
+- **default** — набір типових сутностей (`component`, `hook`, `page`, `util`, `service`, `context`, `typeFile`) з їхніми шарами та правилами для дочірніх елементів (див. [Концепції](/uk/getting-started/concepts/));
+- **deep-tree** — ті самі сутності плюс секція `groups` і приклад перевірки `custom()`.
+
+Згенерований шаблон — готова відправна точка для налаштування: замініть прикладові сутності на власну архітектуру.
+
+## Формати файлів конфігурації
+
+Підтримувані формати файлу конфігурації:
+
+- `tree-lint.config.ts` (рекомендований)
+- `tree-lint.config.js`
+- `tree-lint.config.mjs` / `tree-lint.config.mts`
+- `tree-lint.config.json`
+- `tree-lint.config.yaml` / `tree-lint.config.yml`
+
+З конфігами у форматі `json` або `yaml` функціональність обмежена (немає підтримки кастомних правил через колбеки).
+
+Під час сканування Tree-lint шукає файл конфігурації, починаючи з поточного каталогу і вгору по дереву, тож команду можна запускати з будь-якої підпапки проєкту.
+
+### Безпека
+
+> Конфігурація виконується як код (TypeScript).
+>
+> **Важливо:** Використовуйте Tree-lint лише з перевіреними конфігами. Якщо берете конфіг від третіх осіб, переконайтеся, що він безпечний: він може містити шкідливий код.
+
+## Прапорці команди `scan`
+
+Сканування запускається командою `tree-lint scan` — як у сценарії вище. Додаткові прапорці:
+
+| Прапорець                         | Опис                                                                                                                                                            |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `[path]`                          | Каталог для сканування замість поточного. `roots` із конфіга обчислюються відносно нього, а конфіг, як і раніше, шукається від поточного каталогу вгору         |
+| `-t`, `--tree-output [file]`      | Експорт сирої файлової структури у файл JSON. Без аргумента записує `.project-tree.json` поруч із каталогом сканування                                          |
+| `-a`, `--annotated-output [file]` | Експорт обробленого дерева (з розпізнаними шарами, сутностями й групами) у файл JSON. Без аргумента записує `.entities-tree.json` поруч із каталогом сканування |
+| `-v`, `--vitals`                  | Показати метрики продуктивності рушія (CPU, пам'ять і ефективність вводу/виводу)                                                                                |
+| `-p`, `--print-tree`              | Вивести проаналізовану структуру проєкту в термінал                                                                                                             |
+| `-c`, `--config-path [path]`      | Шлях до файлу конфігурації. За замовчуванням конфіг шукається від поточного каталогу вгору                                                                      |
+| `-g`, `--group-by <type>`         | Змінити групування результатів сканування (за замовчуванням "path")                                                                                             |
+
+> Короткий прапорець `-t` означає різне в `init` (`--type`) та `scan` (`--tree-output`). У скриптах і CI краще використовувати довгі імена прапорців, щоб уникнути плутанини.
+
+Можливі значення `--group-by` на прикладі сценарію вище:
+
+- `path` (за замовчуванням) — групування за шляхом у файловій системі:
+
+  ```text
+  src/components/VeryLongComponentName
+    ✖ Ім'я папки компонента задовге: вкладіться у 20 символів.
+  ```
+
+- `severity` — групування за рівнем (`error`, `warning`):
+
+  ```text
+  ✖ ERRORS:
+    Ім'я папки компонента задовге: вкладіться у 20 символів. - src/components/VeryLongComponentName
+  ```
+
+- `rule` — групування за текстом порушеного правила:
+
+  ```text
+  Ім'я папки компонента задовге: вкладіться у 20 символів.
+    ✖ src/components/VeryLongComponentName
+  ```
+
+## Типові проблеми
+
+- **"Configuration file not found"** — створіть конфіг командою `tree-lint init` або вкажіть наявний через `--config-path`.
+- **Custom rules must return a boolean** — будь-який інший результат колбека в `custom()` зараховується як порушення.
+- **У `custom()` обов'язковий `type`** — без нього Tree-lint 0.0.5 падає з внутрішньою помилкою. Див. [Використання перевірки custom](/uk/rules/custom-usage/).
+- **Правило `size` вимірюється в кілобайтах** — а `node.size` усередині `custom()` — у байтах. Див. [Правила валідації](/uk/rules/).
+- **Папка, що містить лише порожні файли, вважається порожньою** — правило `isEmpty` перевіряє загальний розмір вузла. Див. [Правила валідації](/uk/rules/).
 
 <LinkButton
-  icon="right-arrow"
-  iconPlacement="end"
-  variant="minimal"
-  href="/uk/rules/"
+  icon='right-arrow'
+  iconPlacement='end'
+  variant='minimal'
+  href='/uk/getting-started/concepts/'
 >
-  Детальніше о правилах перевірки
+  Як працюють розпізнавання та правила
+</LinkButton>
+
+<LinkButton
+  icon='right-arrow'
+  iconPlacement='end'
+  variant='minimal'
+  href='/uk/rules/'
+>
+  Довідник правил
 </LinkButton>

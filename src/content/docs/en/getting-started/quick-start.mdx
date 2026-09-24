@@ -1,156 +1,145 @@
 ---
 title: Quick Start
-description: Create a config, run a scan, and review the results.
+description: 'One end-to-end example: find a structure violation, fix it, and lock the check into your team.'
 ---
 
-import { LinkButton } from "@astrojs/starlight/components";
+import { LinkButton, Tabs, TabItem } from '@astrojs/starlight/components';
 
-## 1. Create a config
+This section is one end-to-end example: from installation to a fixed violation. All commands and the config belong to the same small project, so the steps can be followed in order and repeated on your own project.
 
-In the project root, run the command to create a config template:
+Imagine the team agreed on the component structure:
 
-```bash
-tree-lint init
-```
+- every component lives in its own folder inside `src/components`;
+- the folder name starts with an uppercase letter and is no longer than 20 characters;
+- the folder must contain a file with the `.tsx` extension and an `index.ts` file.
 
-The command creates a `tree-lint.config` file in the current directory. Both interactive and non-interactive modes are supported.
+The `VeryLongComponentName` folder breaks the second rule: its name is 22 characters.
 
-**Interactive mode** (TTY terminal outside CI) — the command will prompt for any missing parameters and ask for confirmation before creating the file. If the selection is not satisfactory, you can go back and specify the parameters again.
-
-**Non-interactive mode** (CI) — all parameters must be provided explicitly via flags:
-
-```bash
-tree-lint init --format ts --type deep-tree
-```
-
-| Flag             | Values             | Description               |
-| ---------------- | ------------------ | ------------------------- |
-| `-f`, `--format` | ts, js, json, yaml | Configuration file format |
-| `-t`, `--type`   | default, deep-tree | Configuration template    |
-
-Example project structure:
+Let's start with a small project like this:
 
 ```
 src/
-├── components/
-│   └── Button/
-│       ├── Button.tsx
-│       └── index.ts
-└── pages/
-    └── Home/
+└── components/
+    └── VeryLongComponentName/
+        ├── VeryLongComponentName.tsx
+        └── index.ts
 ```
 
-and configuration file:
+Create it in the folder of your learning project — for example, `my-tree-lint-demo` — or take an existing project with a similar structure. All the following steps run inside this project.
 
-```typescript
-import { createConfig } from "tree-lint";
+## 1. Install the package
+
+<Tabs syncKey='pkg'>
+  <TabItem label='npm'>
+    ```bash npm install -D @redwestdev/tree-lint ```
+  </TabItem>
+  <TabItem label='pnpm'>```bash pnpm add -D @redwestdev/tree-lint ```</TabItem>
+  <TabItem label='yarn'>```bash yarn add -D @redwestdev/tree-lint ```</TabItem>
+</Tabs>
+
+See [Installation](/en/getting-started/installation/) for details on installing and running the command locally.
+
+## 2. Describe the agreements in a config
+
+Create the `tree-lint.config.ts` file in the project root:
+
+```ts
+import { createConfig } from '@redwestdev/tree-lint';
 
 export default createConfig({
-  roots: ["src"], // directories to scan
-  ignore: ["node_modules", "dist", "**/**/*.test.ts"], // exclusions, you can use patterns
+  roots: ['src'], // where to scan
+  ignore: ['node_modules', 'dist'], // what to skip
 
   entities: {
     component: {
       matches: {
-        type: "directory",
-        name: "[A-Z]*",
+        type: 'directory',
+        name: '[A-Z]*', // the folder name starts with an uppercase letter
         children: [
-          { type: "file", name: "*.tsx" },
-          { type: "file", name: "index.ts" },
+          // required composition of a component folder
+          { type: 'file', name: '*.tsx' },
+          { type: 'file', name: 'index.ts' },
         ],
       },
       rules: {
-        nameLength: { type: "error", max: 20, min: 5 },
+        nameLength: {
+          type: 'error',
+          max: 20,
+          message:
+            'Component folder name is too long: keep it within 20 characters.',
+        },
       },
     },
   },
 
   layers: {
     components: {
-      entities: ["component"],
+      entities: ['component'], // look for components inside components folders
     },
   },
 });
 ```
 
-Supported configuration file formats:
+What is written here:
 
-- `tree-lint.config.ts` (recommended)
-- `tree-lint.config.js`
-- `tree-lint.config.json`
-- `tree-lint.config.yaml`
+- `matches` — how to **recognize** a component: a folder whose name starts with an uppercase letter, with a required composition of a `.tsx` file and `index.ts`. Recognition itself does not print errors — it only decides where the rules apply.
+- `rules.nameLength` — a **check** for every recognized folder: the name length must not exceed 20 characters. `message` is your own error text.
+- `layers.components` — components are recognized only inside folders named `components` at any depth inside `roots`.
 
-When using configurations in `json` or `yaml` format, functionality will be limited (no support for custom rules via callback).
+How these sections work together is explained in detail in [Concepts](/en/getting-started/concepts/).
 
-### Security
+## 3. Run the check
 
-> Configuration is executed as code (TypeScript).
->
-> **Important:** Use Tree-lint only with trusted configurations. If you take a config from a third-party source, ensure its security, as it may contain malicious code.
+<Tabs syncKey='pkg'>
+  <TabItem label='npm'>```bash npx tree-lint scan ```</TabItem>
+  <TabItem label='pnpm'>```bash pnpm exec tree-lint scan ```</TabItem>
+  <TabItem label='yarn'>```bash yarn tree-lint scan ```</TabItem>
+</Tabs>
 
-## 2. Run scan
+The output shows the found violation:
 
-```bash
-tree-lint scan
+```text
+src/components/VeryLongComponentName
+  ✖ Component folder name is too long: keep it within 20 characters.
+
+Errors: 1, warnings: 0.
+
+✖ Validation failed.
 ```
 
-### CLI Flags
+What matters in this output:
 
-Supported flags for the `scan` command:
+- the violation belongs to the `VeryLongComponentName` folder — the scan starts from `src`;
+- the error text is your own `message`, not a service message;
+- with errors present, the command exits with code `1`, so the check can be wired into CI.
 
-| Flag                              | Description                                                             |
-| --------------------------------- | ----------------------------------------------------------------------- |
-| `-t`, `--tree-output [file]`      | Export JSON tree                                                        |
-| `-a`, `--annotated-output [file]` | Export annotated tree                                                   |
-| `-v`, `--vitals`                  | Show performance metrics                                                |
-| `-p`, `--print-tree`              | Print tree to the terminal                                              |
-| `-c`, `--config-path [path]`      | Specify the path to the configuration (searches in the root by default) |
-| `-g`, `--group-by <type>`         | Change the grouping of scan results (default is "path")                 |
+Warnings alone do not change the exit code: with `Errors: 0` the command exits with code `0`.
 
-Possible values for `--group-by`:
+## 4. Fix the violation and run again
 
-- `path` (default) - grouping by path in the file system:
+Rename the folder together with the file inside it:
 
-  ```bash
-  /src/views/HomePage/sections/MapSection/images/mw.svg
-  ⚠ File size exceeds or falls short of the allowed configuration limits
+```
+src/
+└── components/
+    └── Icon/
+        ├── Icon.tsx
+        └── index.ts
+```
 
-  /src/views/HomePage/sections/MapSection/images/projects.svg
-  ⚠ File size exceeds or falls short of the allowed configuration limits
+and repeat the scan command:
 
-  /src/views/HomePage/sections/MapSection
-  ✖ Custom validation error: Custom rule must return a boolean, but returned object
-  ```
+```text
+Errors: 0, warnings: 0.
 
-- `severity` - grouping by error level (`error`, `warning`):
+✔ Validation complete successfully!
+```
 
-  ```bash
-  ✖ ERRORS:
-  Custom validation error: Custom rule must return a boolean, but returned object
-    - /src/layouts/MainLayout/sections/FooterSct
+The check passes: the structure matches the config, and the next such violation will be caught even before review.
 
-  ⚠ WARNINGS:
-  It looks as component, but composition of child elements is invalid.
-    - /src/layouts/MainLayout/components/NewAwesomeComponent
-  Name of section does not match the required pattern or convention.
-    - /src/layouts/MainLayout/sections/.HeaderSct
-  ```
+## 5. Lock the check into your team
 
-- `rule` - grouping by the rule that was violated:
-
-  ```bash
-  It looks as component, but composition of child elements is invalid.
-    ⚠ /src/layouts/MainLayout/components/NewAwesomeComponent
-
-  Name of section does not match the required pattern or convention.
-    ⚠ /src/layouts/MainLayout/sections/.HeaderSct
-
-  Custom validation error: Custom rule must return a boolean, but returned object
-    ✖ /src/layouts/MainLayout/sections/FooterSct
-    ✖ /src/layouts/MainLayout/sections/SidebarSct
-  ```
-
-For convenience of running scans, you can add a script to `package.json`:
+Add a script to `package.json`:
 
 ```json
 {
@@ -160,34 +149,137 @@ For convenience of running scans, you can add a script to `package.json`:
 }
 ```
 
-## 3. Check the scan result
+Now you can run `npm run lint:tree`, `pnpm lint:tree`, or `yarn lint:tree` locally.
 
-```text
-Errors: 0, warnings: 0.
+In CI, it is enough to call the same script — the step fails on the first error:
 
-✔ Validation complete successfully!
+```yaml
+- name: Lint file structure
+  run: pnpm lint:tree
 ```
 
-```text
-/src/views/HomePage/sections/MapSection/images/mw.svg
-⚠ File size exceeds or falls short of the allowed configuration limits
+The same call fits a pre-commit hook:
 
-/src/views/HomePage/sections/MapSection/images/projects.svg
-⚠ File size exceeds or falls short of the allowed configuration limits
-
-/src/views/HomePage/sections/MapSection
-✖ Custom validation error: Custom rule must return a boolean, but returned object
-
-Errors: 1, warnings: 2.
-
-✖ Validation failed.
+```bash
+# .husky/pre-commit
+pnpm lint:tree
 ```
+
+---
+
+From here on it is reference material: creating a config via `init`, file formats, `scan` flags, and common problems. You do not need it for the first run.
+
+## Creating a config with `init`
+
+Instead of writing the file by hand, you can generate a config template:
+
+```bash
+tree-lint init
+```
+
+The command creates a `tree-lint.config` file in the current directory. Interactive and non-interactive modes are supported.
+
+**Interactive mode** (a TTY terminal outside CI) — the command prompts for the missing parameters and asks for confirmation before creating the file. If the choice does not suit you, you can go back and specify the parameters again.
+
+**Non-interactive mode** (CI) — all parameters must be passed explicitly via flags:
+
+```bash
+tree-lint init --format ts --type deep-tree
+```
+
+| Flag                      | Possible values    | Description               |
+| ------------------------- | ------------------ | ------------------------- |
+| `-f`, `--format <format>` | ts, js, json, yaml | Configuration file format |
+| `-t`, `--type <type>`     | default, deep-tree | Configuration template    |
+
+Two templates are available:
+
+- **default** — a set of typical entities (`component`, `hook`, `page`, `util`, `service`, `context`, `typeFile`) with their layers and rules for child elements (see [Concepts](/en/getting-started/concepts/));
+- **deep-tree** — the same entities plus a `groups` section and a `custom()` check example.
+
+The generated template is a ready starting point for tuning: replace the example entities with your own architecture.
+
+## Config file formats
+
+Supported config file formats:
+
+- `tree-lint.config.ts` (recommended)
+- `tree-lint.config.js`
+- `tree-lint.config.mjs` / `tree-lint.config.mts`
+- `tree-lint.config.json`
+- `tree-lint.config.yaml` / `tree-lint.config.yml`
+
+With `json` or `yaml` configs, functionality is limited (no support for custom rules via callbacks).
+
+When scanning, Tree-lint looks for the config file starting from the current directory and going up the tree, so the command can be run from any subfolder of the project.
+
+### Security
+
+> The configuration is executed as code (TypeScript).
+>
+> **Important:** Use Tree-lint only with trusted configs. If you take a config from a third party, make sure it is safe, as it may contain malicious code.
+
+## `scan` command flags
+
+The scan is started with the `tree-lint scan` command — as shown in the scenario above. Additional flags:
+
+| Flag                              | Description                                                                                                                                                                  |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `[path]`                          | Directory to scan instead of the current one. The `roots` from the config are resolved relative to it, while the config is still looked up from the current directory upward |
+| `-t`, `--tree-output [file]`      | Export the raw file-system structure to a JSON file. Without an argument writes `.project-tree.json` next to the scan directory                                              |
+| `-a`, `--annotated-output [file]` | Export the processed tree (with recognized layers, entities, and groups) to a JSON file. Without an argument writes `.entities-tree.json` next to the scan directory         |
+| `-v`, `--vitals`                  | Show engine performance metrics (CPU, memory, and I/O efficiency)                                                                                                            |
+| `-p`, `--print-tree`              | Print the analyzed project structure to the terminal                                                                                                                         |
+| `-c`, `--config-path [path]`      | Path to the config file. By default the config is looked up from the current directory upward                                                                                |
+| `-g`, `--group-by <type>`         | Change how scan results are grouped (default "path")                                                                                                                         |
+
+> The short flag `-t` means different things in `init` (`--type`) and `scan` (`--tree-output`). In scripts and CI, prefer long flag names to avoid confusion.
+
+Possible `--group-by` values on the scenario above:
+
+- `path` (default) — grouping by file-system path:
+
+  ```text
+  src/components/VeryLongComponentName
+    ✖ Component folder name is too long: keep it within 20 characters.
+  ```
+
+- `severity` — grouping by level (`error`, `warning`):
+
+  ```text
+  ✖ ERRORS:
+    Component folder name is too long: keep it within 20 characters. - src/components/VeryLongComponentName
+  ```
+
+- `rule` — grouping by the text of the violated rule:
+
+  ```text
+  Component folder name is too long: keep it within 20 characters.
+    ✖ src/components/VeryLongComponentName
+  ```
+
+## Common problems
+
+- **"Configuration file not found"** — create a config with `tree-lint init` or point to an existing one via `--config-path`.
+- **Custom rules must return a boolean** — any other result of the callback in `custom()` counts as a violation.
+- **`type` is required in `custom()`** — without it Tree-lint 0.0.5 crashes with an internal error. See [Using the custom check](/en/rules/custom-usage/).
+- **The `size` rule is measured in kilobytes** — while `node.size` inside `custom()` is in bytes. See [Validation rules](/en/rules/).
+- **A folder containing only empty files counts as empty** — the `isEmpty` rule checks the total size of the node. See [Validation rules](/en/rules/).
 
 <LinkButton
-  icon="right-arrow"
-  iconPlacement="end"
-  variant="minimal"
-  href="/en/rules/"
+  icon='right-arrow'
+  iconPlacement='end'
+  variant='minimal'
+  href='/en/getting-started/concepts/'
 >
-  See more details about the validation rules
+  How recognition and rules work
+</LinkButton>
+
+<LinkButton
+  icon='right-arrow'
+  iconPlacement='end'
+  variant='minimal'
+  href='/en/rules/'
+>
+  Rules reference
 </LinkButton>

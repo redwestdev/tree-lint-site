@@ -1,36 +1,98 @@
 ---
 title: Приклади конфігурації
-description: "Приклади опису правил у конфізі Tree-lint."
+description: 'Як описати правила для файлів і папок у конфігу Tree-lint.'
 ---
 
-```json
-{
-  "name": {
-    "pattern": "^[a-z0-9-]+$",
-    "type": "error",
-    "message": "Ім'я повинно містити лише малі літери, цифри та дефіси"
+Блок `rules` описує перевірки й завжди вкладений у конкретне місце конфіга: сутність, шар, групу або запис `_matches` для дочірніх елементів. Тут показано два повні блоки — для файлової сутності та для папкової; вставте їх у `rules` власної сутності.
+
+Спільні для всіх правил поля:
+
+- **`type`** — рівень порушення: `"error"` або `"warning"`. Лише помилки ведуть до ненульового коду виходу `tree-lint scan`.
+- **`message`** — необов'язковий текст, який замінює стандартне повідомлення про порушення у звіті.
+- **`min` / `max`** — числові ліміти. Для числових правил `min` за замовчуванням — `1`; `max` за замовчуванням немає, і його потрібно задавати явно — інакше правило завжди падає.
+- Ліміти **`size`** задаються в **кілобайтах**.
+- **`name.pattern`** — глоб-патерн [micromatch](https://github.com/micromatch/micromatch), що застосовується до повного імені (разом із розширенням). Це не регулярний вираз: використовуйте синтаксис глобів, наприклад `+([a-z0-9-])` замість `^[a-z0-9-]+$`.
+
+## Правила для файлової сутності
+
+Файли підтримують `name`, `nameLength`, `size`, `lineCount`, `isEmpty` і `custom`. Приклад для сутності `util` — TypeScript-файла у шарі `utils`:
+
+```ts
+export default createConfig({
+  entities: {
+    util: {
+      matches: { type: 'file', name: '*.ts' },
+      rules: {
+        name: {
+          pattern: '+([a-z0-9-])',
+          type: 'error',
+          message: 'Ім'я має містити лише малі літери, цифри та дефіси',
+        },
+        nameLength: {
+          min: 3,
+          max: 20,
+          type: 'warning',
+        },
+        size: {
+          max: 100,
+          type: 'error',
+        },
+        lineCount: {
+          max: 200,
+          type: 'error',
+        },
+        isEmpty: {
+          type: 'error',
+        },
+      },
+    },
   },
-  "nameLength": {
-    "min": 3,
-    "max": 20,
-    "type": "warning"
+  layers: {
+    utils: { entities: ['util'] },
   },
-  "size": {
-    "min": 100,
-    "max": 5000,
-    "type": "error"
-  },
-  "lineCount": {
-    "max": 200,
-    "type": "error"
-  },
-  "childrenAmount": {
-    "min": 1,
-    "max": 10,
-    "type": "error"
-  },
-  "isEmpty": {
-    "type": "error"
-  }
-}
+});
 ```
+
+Тут у `nameLength` і `size` задані обидва ліміти (`min` для `size` пропущено — діє за замовчуванням `1`), а в `lineCount` — лише `max`.
+
+## Правила для папкової сутності
+
+Папки підтримують `name`, `nameLength`, `size`, `childrenAmount`, `isEmpty` і `custom`. Приклад для сутності `component` зі [Швидкого старту](/uk/getting-started/quick-start/):
+
+```ts
+export default createConfig({
+  entities: {
+    component: {
+      matches: {
+        type: 'directory',
+        name: '[A-Z]*',
+        children: [
+          { type: 'file', name: '*.tsx' },
+          { type: 'file', name: 'index.ts' },
+        ],
+      },
+      rules: {
+        nameLength: {
+          max: 20,
+          type: 'error',
+          message: "Ім'я папки компонента задовге: вкладіться у 20 символів.",
+        },
+        childrenAmount: {
+          max: 10,
+          type: 'warning',
+        },
+        isEmpty: {
+          type: 'error',
+        },
+      },
+    },
+  },
+  layers: {
+    components: { entities: ['component'] },
+  },
+});
+```
+
+Перевірки з цього блоку застосовуються до самої папки: `nameLength` — до її імені, `childrenAmount` — до кількості прямих дочірніх елементів, `isEmpty` — до загального розміру вмісту.
+
+Про те, як вимірюється кожне правило, — у [Правилах валідації](/uk/rules/).

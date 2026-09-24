@@ -1,14 +1,46 @@
 ---
 title: Installation
-description: How to install Tree-lint in your project with npm, pnpm, or yarn.
+description: How to install Tree-lint in a project with npm, pnpm, or yarn.
 ---
 
-import { Tabs, TabItem } from "@astrojs/starlight/components";
+import { LinkButton, Tabs, TabItem } from '@astrojs/starlight/components';
 
-<Tabs syncKey="pkg">
-  <TabItem label="npm">
+Tree-lint requires [Node.js](https://nodejs.org/) version 18 or higher.
+
+<Tabs syncKey='pkg'>
+  <TabItem label='npm'>
     ```bash npm install -D @redwestdev/tree-lint ```
   </TabItem>
-  <TabItem label="pnpm">```bash pnpm add -D @redwestdev/tree-lint ```</TabItem>
-  <TabItem label="yarn">```bash yarn add -D @redwestdev/tree-lint ```</TabItem>
+  <TabItem label='pnpm'>```bash pnpm add -D @redwestdev/tree-lint ```</TabItem>
+  <TabItem label='yarn'>```bash yarn add -D @redwestdev/tree-lint ```</TabItem>
 </Tabs>
+
+The package is installed as a dev dependency and adds the `tree-lint` command.
+
+## How to run it locally
+
+The `tree-lint` command lives in `node_modules/.bin` and is available when the package manager adds that directory to `PATH`. This happens:
+
+- inside `package.json` scripts — npm, pnpm, and yarn add the local `node_modules/.bin` to `PATH` for every script;
+- when running via `npx tree-lint`, `pnpm exec tree-lint`, or `yarn tree-lint`.
+
+The easiest way is to add a script:
+
+```json
+{
+  "scripts": {
+    "lint:tree": "tree-lint scan"
+  }
+}
+```
+
+and run it as `npm run lint:tree`, `pnpm lint:tree`, or `yarn lint:tree`. The same script will come in handy in CI later: the check will run with one command both locally and in the pipeline.
+
+<LinkButton
+  icon='right-arrow'
+  iconPlacement='end'
+  variant='minimal'
+  href='/en/getting-started/quick-start/'
+>
+  Go to the first run
+</LinkButton>

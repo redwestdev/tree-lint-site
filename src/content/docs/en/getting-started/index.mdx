@@ -1,38 +1,40 @@
 ---
-title: Tree-lint
-description: Tree-lint is a file structure linter that helps maintain architectural order and prevents chaos in projects.
+title: Getting started
+description: What Tree-lint does, what it does not promise, and how to read the docs.
 ---
 
-import { CardGrid, LinkCard } from "@astrojs/starlight/components";
+import { CardGrid, LinkCard } from '@astrojs/starlight/components';
 
-Tree-lint is a file structure linter that helps maintain architectural order and prevents chaos in projects.
+Tree-lint is a file structure linter. You describe your file and folder conventions in a config, and Tree-lint checks them on every run — locally and in CI.
 
-> Tree-lint is not tied to a specific architecture. You define your architecture in the configuration, and Tree-lint checks for compliance. It supports Deep Tree, FSD, monorepos, and any other approaches where you can define distinct layers and entities.
+## What it does
 
-## Why use Tree-lint?
+- recognizes entities by name and folder composition;
+- checks names, required folder composition, name length, size, and number of children;
+- supports custom checks via `custom` with any message;
+- separates blocking errors from warnings;
+- limits the scope with `roots` and `ignore`;
+- fits into CI: the command exits with code `1` when there are errors and `0` otherwise.
 
-The main tasks the linter covers are:
+## What it does not promise
 
-- **Architectural Integrity Control** - Allows you to fix rules for placing files and folders. The linter automatically monitors violations: for example, when components get into the utilities folder or project layers are mixed up.
+- does not parse code contents or check imports — only the file structure;
+- does not fix the structure automatically — it shows the violation, and the developer fixes it;
+- does not support symbolic links — they are skipped during the scan.
 
-- **Adherence to Team Agreements** - Turns architectural rules into a specification. This helps developers adhere to a unified development standard, minimizing disputes about where things should be placed.
+> Tree-lint is not tied to a particular architecture. It fits layered and modular structures, legacy code, and projects with code generation — anywhere a file and folder convention can be described.
 
-- **Simplifying Onboarding** - The linter configuration serves as visual documentation. A new team member can quickly study the structure without wasting time looking for answers.
+## Reading paths
 
-- **Flexible Work in Monorepos** - Allows you to set separate rules for different parts of the project. Each team can adhere to its own architecture without violating the general monorepo standards.
-
-- **Legacy Project Audit** - The tool allows you to quickly assess the state of the file structure. This is indispensable when taking over projects with accumulated technical debt to understand how much the current organization of files corresponds to the target model.
-
-- **Incremental Refactoring** - Introducing a new architecture to a legacy codebase? Enforce rules only on new code while ignoring old files via `ignore` patterns. No need to refactor everything at once to start benefiting from the linter.
-
-## Next steps
+New to the tool? Start with the Quick Start to get the first result, and come back to the reference sections as questions arise.
 
 <CardGrid>
-  <LinkCard title="Installation" href="/en/getting-started/installation/" />
-  <LinkCard title="Quick start" href="/en/getting-started/quick-start/" />
+  <LinkCard title='Installation' href='/en/getting-started/installation/' />
+  <LinkCard title='Quick Start' href='/en/getting-started/quick-start/' />
+  <LinkCard title='Concepts' href='/en/getting-started/concepts/' />
   <LinkCard
-    title="Architecture examples"
-    href="/en/getting-started/architecture-examples/"
+    title='Architecture examples'
+    href='/en/getting-started/architecture-examples/'
   />
-  <LinkCard title="Validation rules" href="/en/rules/" />
+  <LinkCard title='Validation rules' href='/en/rules/' />
 </CardGrid>

@@ -1,48 +1,368 @@
 ---
 title: Приклади архітектур
-description: "Приклади конфігурацій Tree-lint: Deep Tree, Feature-Sliced Design і монорепо."
+description: 'Готові рецепти конфігів Tree-lint: компоненти та хуки, Feature-Sliced Design, монорепозиторій, документація і переклади.'
 ---
 
-## Deep Tree
+Кожен рецепт — це задача, дерево проєкту, повний конфіг і результат запуску. Усі конфіги перевірені на Tree-lint 0.0.5.
 
-```bash
-entities: {
-  component: { /* ... */ },
-  section: { /* ... */ },
-  page: { /* ... */ },
-  hook: { /* ... */ },
-},
+Правила в рецептах не повторюють патерни з `matches`: збіг імені вже перевіряється під час розпізнавання, а `rules` додають те, чого розпізнавання не вміє — розмір, довжину імені, склад і власні умови. Подробиці — у [Концепціях](/uk/getting-started/concepts/).
 
-layers: {
-  components: { entities: ["component"] },
-  sections: { entities: ["section"] },
-  pages: { entities: ["page"] },
-  hooks: { entities: ["hook"] },
-}
+## Компоненти та хуки
+
+**Задача.** Компонент не має роздуватися: файл `*.tsx` — не довше ніж 200 рядків, хук — не довше ніж 80. У папці компонента мають бути `*.tsx` та `index.ts`.
+
+**Дерево:**
+
+```text
+src/
+├── components/
+│   ├── Button/
+│   │   ├── Button.tsx      ← 250 рядків
+│   │   └── index.ts
+│   └── Icon/
+│       ├── Icon.tsx
+│       └── index.ts
+└── hooks/
+    └── useDebounce.ts      ← 90 рядків
 ```
+
+**Конфіг:**
+
+```typescript
+import { createConfig } from '@redwestdev/tree-lint';
+
+export default createConfig({
+  roots: ['src'],
+  ignore: ['node_modules', 'dist'],
+
+  entities: {
+    component: {
+      matches: {
+        type: 'directory',
+        name: '[A-Z]*',
+        children: [
+          { type: 'file', name: '*.tsx' },
+          { type: 'file', name: 'index.ts' },
+        ],
+      },
+      rules: {
+        children: [
+          {
+            _matches: { type: 'file', name: '*.tsx' },
+            lineCount: { type: 'error', max: 200 },
+          },
+        ],
+      },
+    },
+
+    hook: {
+      matches: { type: 'file', name: 'use*.{ts,tsx}' },
+      rules: { lineCount: { type: 'warning', max: 80 } },
+    },
+  },
+
+  layers: {
+    components: { entities: ['component'] },
+    hooks: { entities: ['hook'] },
+  },
+});
+```
+
+**Що знайде запуск:**
+
+```text
+src/components/Button/Button.tsx
+  ✖ Line count in this file violates the maximum or minimum threshold
+
+src/hooks/useDebounce.ts
+  ⚠ Line count in this file violates the maximum or minimum threshold
+
+Errors: 1, warnings: 1.
+✖ Validation failed.
+```
+
+Помилка блокує запуск (код виходу 1). Виправлення: розбийте `Button.tsx` на кілька файлів — і перевірка проходить із кодом виходу 0.
+
+**Межі цього рецепта:**
+
+- Розпізнається лише компонент із повним складом дочірніх елементів. Папка без `index.ts` або порожня дає попередження "It looks as component, but composition of child elements is invalid." — правила до неї не застосовуються, тож `isEmpty` тут не спрацює для порожньої папки.
+- `use*.{ts,tsx}` розпізнає хуки лише всередині папки `hooks` — шар обмежує область дії сутностей.
 
 ## Feature-Sliced Design (FSD)
 
-```bash
-entities: {
-  feature: { /* ... */ },
-  widget: { /* ... */ },
-  entity: { /* ... */ },
-},
+**Задача.** Закріпити файлові домовленості FSD: pages, features і widgets — окремі типи папок з обов'язковим складом, а ім'я віджета — не довше ніж 20 символів.
 
-layers: {
-  app: { /* ... */ },
-  pages: { /* ... */ },
-  widgets: { entities: ["widget"] },
-  features: { entities: ["feature"] },
-  entities: { entities: ["entity"] },
-  shared: { /* ... */ },
-}
+**Дерево:**
+
+```text
+src/
+├── pages/
+│   └── profile/
+│       ├── ProfilePage.tsx             ← 180 рядків
+│       └── profile.module.css
+├── features/
+│   └── cart/
+│       ├── cart.tsx
+│       └── index.ts
+├── widgets/
+│   └── ProductCardWithVeryLongName/    ← 25 символів
+│       ├── ProductCardWithVeryLongName.tsx
+│       └── index.ts
+├── entities/
+│   └── user.model.ts
+└── shared/
+    └── lib/
+        └── format.lib.ts
 ```
 
-## Монорепо
+**Конфіг:**
 
 ```typescript
-roots: ["packages/ui", "packages/core", "packages/api"],
-// кожен корінь сканується незалежно
+import { createConfig } from '@redwestdev/tree-lint';
+
+export default createConfig({
+  roots: ['src'],
+  ignore: ['node_modules', 'dist'],
+
+  entities: {
+    page: {
+      matches: {
+        type: 'directory',
+        name: '[a-z]*',
+        children: [
+          { type: 'file', name: '*.tsx' },
+          { type: 'file', name: '*.module.css' },
+        ],
+      },
+      rules: {
+        children: [
+          {
+            _matches: { type: 'file', name: '*.tsx' },
+            lineCount: { type: 'warning', max: 150 },
+          },
+        ],
+      },
+    },
+
+    feature: {
+      matches: {
+        type: 'directory',
+        name: '[a-z]*',
+        children: [
+          { type: 'file', name: '*.tsx' },
+          { type: 'file', name: 'index.ts' },
+        ],
+      },
+    },
+
+    widget: {
+      matches: {
+        type: 'directory',
+        name: '[A-Z]*',
+        children: [
+          { type: 'file', name: '*.tsx' },
+          { type: 'file', name: 'index.ts' },
+        ],
+      },
+      rules: {
+        nameLength: {
+          type: 'error',
+          max: 20,
+          message: "Ім'я віджета задовге: вкладіться у 20 символів.",
+        },
+      },
+    },
+
+    model: { matches: { type: 'file', name: '*.model.ts' } },
+    lib: { matches: { type: 'file', name: '*.lib.ts' } },
+  },
+
+  layers: {
+    pages: { entities: ['page'] },
+    features: { entities: ['feature'] },
+    widgets: { entities: ['widget'] },
+    entities: { entities: ['model'] },
+    shared: { entities: ['lib'] },
+  },
+});
 ```
+
+**Що знайде запуск:**
+
+```text
+src/pages/profile/ProfilePage.tsx
+  ⚠ Line count in this file violates the maximum or minimum threshold
+
+src/widgets/ProductCardWithVeryLongName
+  ✖ Ім'я віджета задовге: вкладіться у 20 символів.
+
+Errors: 1, warnings: 1.
+✖ Validation failed.
+```
+
+**Межі цього рецепта.** Це адаптовний приклад файлових домовленостей у стилі FSD, а не повна перевірка FSD: Tree-lint не аналізує імпорти, не перевіряє, що шар не залежить від вищих шарів, і не стежить за публічним API. Підлаштуйте імена та склад дочірніх елементів у `matches` під структуру свого проєкту.
+
+## Монорепозиторій
+
+**Задача.** Перевіряти кожен пакет незалежно, не скануючи весь репозиторій.
+
+У Tree-lint 0.0.5 один конфіг — це один набір правил, правил для окремих коренів немає. Для монорепозиторія є два робочі варіанти.
+
+### Варіант A: спільний конфіг у корені репозиторію
+
+```typescript
+import { createConfig } from '@redwestdev/tree-lint';
+
+export default createConfig({
+  roots: ['packages/ui/src', 'packages/core/src'],
+  ignore: ['node_modules', 'dist'],
+
+  entities: {
+    component: {
+      matches: {
+        type: 'directory',
+        name: '[A-Z]*',
+        children: [
+          { type: 'file', name: '*.tsx' },
+          { type: 'file', name: 'index.ts' },
+        ],
+      },
+      rules: {
+        nameLength: {
+          type: 'error',
+          max: 20,
+          message: "Ім'я папки компонента задовге: вкладіться у 20 символів.",
+        },
+      },
+    },
+  },
+
+  layers: {
+    components: { entities: ['component'] },
+  },
+});
+```
+
+Запуск із кореня репозиторію:
+
+```text
+$ tree-lint scan
+
+Will scan the following paths:
+  packages/core/src
+  packages/ui/src
+
+packages/ui/src/components/VeryLongComponentName
+  ✖ Ім'я папки компонента задовге: вкладіться у 20 символів.
+
+Errors: 1, warnings: 0.
+✖ Validation failed.
+```
+
+До кожного переліченого кореня застосовуються ті самі правила.
+
+### Варіант B: конфіг у кожному пакеті
+
+Якщо в пакетів різні правила, покладіть `tree-lint.config.ts` у кожен пакет і задайте там локальні корені:
+
+```typescript
+// packages/ui/tree-lint.config.ts
+import { createConfig } from '@redwestdev/tree-lint';
+
+export default createConfig({
+  roots: ['src'], // відносно каталогу, з якого запускається сканування
+  ignore: ['node_modules', 'dist'],
+  // ...сутності та шари, як вище
+});
+```
+
+Запуск із каталогу пакета:
+
+```text
+$ cd packages/ui && tree-lint scan
+```
+
+Tree-lint підхоплює найближчий конфіг, підіймаючись угору від поточного каталогу.
+
+**Межі варіантів.** `roots` — це конкретні шляхи, а не глоб-патерни, і вони обчислюються відносно каталогу, з якого запускається `scan`. Шляхи поза каталогом запуску ігноруються з попередженням `Access denied`. Якщо запустити команду з `packages/ui` із конфігом варіанта A, корені `packages/ui/src` шукатимуться всередині `packages/ui` — саме тому варіант B використовує локальні корені.
+
+## Документація та переклади
+
+**Задача.** У папці документації — лише файли `.md` і `.mdx`, а файли перекладів називаються двома малими літерами (`en.json`, `ru.json`). Рецепт побудовано за мотивами конфіга самого сайту Tree-lint.
+
+**Дерево:**
+
+```text
+content/
+├── docs/
+│   ├── getting-started.mdx
+│   ├── api.md
+│   └── README.txt              ← неправильний формат
+└── i18n/
+    ├── ru.json
+    ├── en.json
+    └── uk-UA.json              ← ім'я порушує правило
+```
+
+**Конфіг:**
+
+```typescript
+import { createConfig } from '@redwestdev/tree-lint';
+
+export default createConfig({
+  roots: ['content'],
+  ignore: ['node_modules', 'dist'],
+
+  entities: {
+    doc: { matches: { type: 'file', name: '*.{md,mdx}' } },
+    translation: { matches: { type: 'file', name: '[a-z][a-z].json' } },
+  },
+
+  layers: {
+    docs: {
+      entities: ['doc'],
+      rules: {
+        custom: {
+          type: 'error',
+          message: 'У папці документації можуть лежати лише файли .md і .mdx.',
+          callback: (node) =>
+            node.children.every(
+              (child) => child.extension === 'md' || child.extension === 'mdx'
+            ),
+        },
+      },
+    },
+    i18n: {
+      entities: ['translation'],
+      rules: {
+        custom: {
+          type: 'error',
+          message:
+            'Файл перекладу має називатися двома малими літерами: en.json, ru.json.',
+          callback: (node) =>
+            node.children.every((child) =>
+              /^[a-z][a-z]\.json$/.test(child.name)
+            ),
+        },
+      },
+    },
+  },
+});
+```
+
+**Що знайде запуск:**
+
+```text
+content/docs
+  ✖ У папці документації можуть лежати лише файли .md і .mdx.
+
+content/i18n
+  ✖ Файл перекладу має називатися двома малими літерами: en.json, ru.json.
+
+Errors: 2, warnings: 0.
+✖ Validation failed.
+```
+
+Виправлення: видаліть `README.txt` і перейменуйте `uk-UA.json` на `uk.json` — перевірка проходить.
+
+**Чому тут потрібен `custom`.** Сутність `doc` розпізнає лише правильні файли: `README.txt` під неї не потрапляє, і без перевірки на шарі він залишився б непоміченим. Правило `custom` на шарі бачить усі дочірні елементи папки — і правильні, і зайві. Не забудьте `type: "error"` — без нього Tree-lint 0.0.5 падає з внутрішньою помилкою. Детальніше — у [Використанні перевірки custom](/uk/rules/custom-usage/).

@@ -1,47 +1,64 @@
 ---
-title: Available fields in the node object inside custom()
-description: "Fields of the node object available inside the custom() check callback."
+title: Available fields of the node object inside custom()
+description: 'The fields of the node object available inside the callback function of a custom check.'
 ---
 
-The callback function `callback(node)` receives an object, the structure of which depends on the node type.
+The callback function receives a node whose type depends on where the rule is declared — see the table on the [Using the custom check](/en/rules/custom-usage/) page. The field schemas below are for reference: the blocks show the composition of the fields, not a runnable file.
 
-## 1. Basic fields (available in all nodes)
+## 1. Base fields (available on all nodes)
 
-```
+```ts
 {
-  name: string;        // Name of the file or folder
+  name: string;        // File or folder name
   path: string;        // Full path to the node
-  size: number;        // Size in bytes
-  ignored: boolean;    // Is ignored by the configuration file
-  unreadable: boolean; // Reading error
-  hidden: boolean;     // Is hidden (name starts with ".")
+  size: number;        // Size in bytes; for folders — the sum of all nested files
+  ignored?: boolean;   // true when the node matched an ignore pattern
+  unreadable?: boolean;// true when the node could not be read
+  hidden?: boolean;    // true when the name starts with "."
+  isValid?: boolean;   // true by default; false on nodes with an error-level violation
+  isExcluded?: boolean;// true when ignored or unreadable — such nodes do not take part in checks
+  rules?: object;      // Rules from the config applied to this node
+  validate?: () => []; // Engine service method; do not call it inside custom
 }
 ```
 
-## 2. Additional fields for files (`FileNode`, `FileEntity`)
+Excluded nodes (`isExcluded: true`) do not reach rules: if a node got to the `custom` function, it is not excluded.
 
-```
+## 2. Additional file fields (`FileNode`, `FileEntity`)
+
+```ts
 {
   ...BaseFields,
-  extension: string;   // File extension (e.g., "ts")
+  extension: string;   // File extension without the dot, for example "ts"
   lines: number;       // Number of lines in the file
 }
 ```
 
-## 3. Additional fields for directories (`DirNode`, `LayerNode`, `GroupNode`, `DirEntity`)
+## 3. Additional folder fields (`DirNode`, `LayerNode`, `GroupNode`, `DirEntity`)
 
-```
+```ts
 {
   ...BaseFields,
   children: TAnyNode[]; // Array of child nodes
 }
 ```
 
-## 4. Additional fields for entities (`FileEntity`, `DirEntity`)
+## 4. Additional entity field (`FileEntity`, `DirEntity`)
 
-```
+```ts
 {
- ...BaseFields/FileFields/DirFields,
- entity: string;      // Entity type from configuration
+  ...BaseFields,
+  entity: string; // The entity name from the entities section
 }
 ```
+
+The summary by type:
+
+| Node type    | Fields                       |
+| ------------ | ---------------------------- |
+| `FileNode`   | base + file                  |
+| `DirNode`    | base + `children`            |
+| `FileEntity` | base + file + `entity`       |
+| `DirEntity`  | base + `children` + `entity` |
+| `LayerNode`  | base + `children`            |
+| `GroupNode`  | base + `children`            |

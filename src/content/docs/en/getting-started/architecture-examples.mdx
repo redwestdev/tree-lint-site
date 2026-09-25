@@ -1,0 +1,370 @@
+---
+title: Architecture examples
+description: 'Ready-made Tree-lint config recipes: components and hooks, Feature-Sliced Design, a monorepo, documentation and translations.'
+---
+
+Each recipe is a task, a project tree, a complete config, and the run result. All configs are verified on Tree-lint 0.0.5.
+
+The rules in the recipes do not repeat the patterns from `matches`: the name match is already checked during recognition, and `rules` add what recognition cannot do — size, name length, composition, and custom conditions. Details are in [Concepts](/en/getting-started/concepts/).
+
+## Components and hooks
+
+**Task.** A component must not bloat: a `*.tsx` file must be no longer than 200 lines, and a hook no longer than 80. A component folder must contain `*.tsx` and `index.ts`.
+
+**Tree:**
+
+```
+src/
+├── components/
+│   ├── Button/
+│   │   ├── Button.tsx      ← 250 lines
+│   │   └── index.ts
+│   └── Icon/
+│       ├── Icon.tsx
+│       └── index.ts
+└── hooks/
+    └── useDebounce.ts      ← 90 lines
+```
+
+**Config:**
+
+```typescript
+import { createConfig } from '@redwestdev/tree-lint';
+
+export default createConfig({
+  roots: ['src'],
+  ignore: ['node_modules', 'dist'],
+
+  entities: {
+    component: {
+      matches: {
+        type: 'directory',
+        name: '[A-Z]*',
+        children: [
+          { type: 'file', name: '*.tsx' },
+          { type: 'file', name: 'index.ts' },
+        ],
+      },
+      rules: {
+        children: [
+          {
+            _matches: { type: 'file', name: '*.tsx' },
+            lineCount: { type: 'error', max: 200 },
+          },
+        ],
+      },
+    },
+
+    hook: {
+      matches: { type: 'file', name: 'use*.{ts,tsx}' },
+      rules: { lineCount: { type: 'warning', max: 80 } },
+    },
+  },
+
+  layers: {
+    components: { entities: ['component'] },
+    hooks: { entities: ['hook'] },
+  },
+});
+```
+
+**What the run finds:**
+
+```
+src/components/Button/Button.tsx
+  ✖ Line count in this file violates the maximum or minimum threshold
+
+src/hooks/useDebounce.ts
+  ⚠ Line count in this file violates the maximum or minimum threshold
+
+Errors: 1, warnings: 1.
+✖ Validation failed.
+```
+
+The error blocks the run (exit code 1). Fix: split `Button.tsx` into several files — and the check passes with exit code 0.
+
+**Boundaries of this recipe:**
+
+- Only a component with the full child composition is recognized. A folder without `index.ts` or an empty one produces the warning "It looks as component, but composition of child elements is invalid." — rules do not apply to it, so `isEmpty` will not fire for an empty folder here.
+- `use*.{ts,tsx}` recognizes hooks only inside the `hooks` folder — the layer limits the scope of the entities.
+
+## Feature-Sliced Design (FSD)
+
+**Task.** Lock down FSD file conventions: pages, features, and widgets are separate folder types with a required composition, and a widget name must be no longer than 20 characters.
+
+**Tree:**
+
+```
+src/
+├── pages/
+│   └── profile/
+│       ├── ProfilePage.tsx             ← 180 lines
+│       └── profile.module.css
+├── features/
+│   └── cart/
+│       ├── cart.tsx
+│       └── index.ts
+├── widgets/
+│   └── ProductCardWithVeryLongName/    ← 25 characters
+│       ├── ProductCardWithVeryLongName.tsx
+│       └── index.ts
+├── entities/
+│   └── user.model.ts
+└── shared/
+    └── lib/
+        └── format.lib.ts
+```
+
+**Config:**
+
+```typescript
+import { createConfig } from '@redwestdev/tree-lint';
+
+export default createConfig({
+  roots: ['src'],
+  ignore: ['node_modules', 'dist'],
+
+  entities: {
+    page: {
+      matches: {
+        type: 'directory',
+        name: '[a-z]*',
+        children: [
+          { type: 'file', name: '*.tsx' },
+          { type: 'file', name: '*.module.css' },
+        ],
+      },
+      rules: {
+        children: [
+          {
+            _matches: { type: 'file', name: '*.tsx' },
+            lineCount: { type: 'warning', max: 150 },
+          },
+        ],
+      },
+    },
+
+    feature: {
+      matches: {
+        type: 'directory',
+        name: '[a-z]*',
+        children: [
+          { type: 'file', name: '*.tsx' },
+          { type: 'file', name: 'index.ts' },
+        ],
+      },
+    },
+
+    widget: {
+      matches: {
+        type: 'directory',
+        name: '[A-Z]*',
+        children: [
+          { type: 'file', name: '*.tsx' },
+          { type: 'file', name: 'index.ts' },
+        ],
+      },
+      rules: {
+        nameLength: {
+          type: 'error',
+          max: 20,
+          message: 'Widget name is too long: keep it within 20 characters.',
+        },
+      },
+    },
+
+    model: { matches: { type: 'file', name: '*.model.ts' } },
+    lib: { matches: { type: 'file', name: '*.lib.ts' } },
+  },
+
+  layers: {
+    pages: { entities: ['page'] },
+    features: { entities: ['feature'] },
+    widgets: { entities: ['widget'] },
+    entities: { entities: ['model'] },
+    shared: { entities: ['lib'] },
+  },
+});
+```
+
+**What the run finds:**
+
+```
+src/pages/profile/ProfilePage.tsx
+  ⚠ Line count in this file violates the maximum or minimum threshold
+
+src/widgets/ProductCardWithVeryLongName
+  ✖ Widget name is too long: keep it within 20 characters.
+
+Errors: 1, warnings: 1.
+✖ Validation failed.
+```
+
+**Boundaries of this recipe.** This is an adaptable example of FSD-style file conventions, not a full FSD check: Tree-lint does not analyze imports, does not check that a layer does not depend on higher layers, and does not track the public API. Adjust the names and child compositions in `matches` to your project's structure.
+
+## Monorepo
+
+**Task.** Check each package independently without scanning the whole repository.
+
+In Tree-lint 0.0.5, one config is one set of rules, with no per-root rules. There are two workable options for a monorepo.
+
+### Option A: a shared config in the repository root
+
+```typescript
+import { createConfig } from '@redwestdev/tree-lint';
+
+export default createConfig({
+  roots: ['packages/ui/src', 'packages/core/src'],
+  ignore: ['node_modules', 'dist'],
+
+  entities: {
+    component: {
+      matches: {
+        type: 'directory',
+        name: '[A-Z]*',
+        children: [
+          { type: 'file', name: '*.tsx' },
+          { type: 'file', name: 'index.ts' },
+        ],
+      },
+      rules: {
+        nameLength: {
+          type: 'error',
+          max: 20,
+          message:
+            'Component folder name is too long: keep it within 20 characters.',
+        },
+      },
+    },
+  },
+
+  layers: {
+    components: { entities: ['component'] },
+  },
+});
+```
+
+Running from the repository root:
+
+```
+$ tree-lint scan
+
+Will scan the following paths:
+  packages/core/src
+  packages/ui/src
+
+packages/ui/src/components/VeryLongComponentName
+  ✖ Component folder name is too long: keep it within 20 characters.
+
+Errors: 1, warnings: 0.
+✖ Validation failed.
+```
+
+The same rules apply to every listed root.
+
+### Option B: a config in each package
+
+If packages have different rules, put a `tree-lint.config.ts` in each package and set local roots there:
+
+```typescript
+// packages/ui/tree-lint.config.ts
+import { createConfig } from '@redwestdev/tree-lint';
+
+export default createConfig({
+  roots: ['src'], // relative to the directory the scan is run from
+  ignore: ['node_modules', 'dist'],
+  // ...entities and layers, as above
+});
+```
+
+Running from the package directory:
+
+```
+$ cd packages/ui && tree-lint scan
+```
+
+Tree-lint picks up the nearest config by walking up from the current directory.
+
+**Boundaries of the options.** `roots` are concrete paths, not glob patterns, and they are resolved relative to the directory the `scan` runs from. Paths outside the run directory are ignored with an `Access denied` warning. If you run the command from `packages/ui` with Option A's config, the roots `packages/ui/src` will be looked for inside `packages/ui` — that is why Option B uses local roots.
+
+## Documentation and translations
+
+**Task.** Only `.md` and `.mdx` files in the documentation folder, and translation files are named with two lowercase letters (`en.json`, `ru.json`). The recipe is based on the config of the Tree-lint site itself.
+
+**Tree:**
+
+```
+content/
+├── docs/
+│   ├── getting-started.mdx
+│   ├── api.md
+│   └── README.txt              ← wrong format
+└── i18n/
+    ├── ru.json
+    ├── en.json
+    └── uk-UA.json              ← name breaks the rule
+```
+
+**Config:**
+
+```typescript
+import { createConfig } from '@redwestdev/tree-lint';
+
+export default createConfig({
+  roots: ['content'],
+  ignore: ['node_modules', 'dist'],
+
+  entities: {
+    doc: { matches: { type: 'file', name: '*.{md,mdx}' } },
+    translation: { matches: { type: 'file', name: '[a-z][a-z].json' } },
+  },
+
+  layers: {
+    docs: {
+      entities: ['doc'],
+      rules: {
+        custom: {
+          type: 'error',
+          message:
+            'Only .md and .mdx files may live in the documentation folder.',
+          callback: (node) =>
+            node.children.every(
+              (child) => child.extension === 'md' || child.extension === 'mdx'
+            ),
+        },
+      },
+    },
+    i18n: {
+      entities: ['translation'],
+      rules: {
+        custom: {
+          type: 'error',
+          message:
+            'A translation file must be named with two lowercase letters: en.json, ru.json.',
+          callback: (node) =>
+            node.children.every((child) =>
+              /^[a-z][a-z]\.json$/.test(child.name)
+            ),
+        },
+      },
+    },
+  },
+});
+```
+
+**What the run finds:**
+
+```
+content/docs
+  ✖ Only .md and .mdx files may live in the documentation folder.
+
+content/i18n
+  ✖ A translation file must be named with two lowercase letters: en.json, ru.json.
+
+Errors: 2, warnings: 0.
+✖ Validation failed.
+```
+
+Fix: delete `README.txt` and rename `uk-UA.json` to `uk.json` — the check passes.
+
+**Why `custom` is needed here.** The `doc` entity only recognizes proper files: `README.txt` does not fall under it, and without a check on the layer it would stay unnoticed. The `custom` rule on the layer sees all children of the folder — both the proper and the extra ones. Do not forget `type: "error"` — without it Tree-lint 0.0.5 crashes with an internal error. More in [Using the custom check](/en/rules/custom-usage/).

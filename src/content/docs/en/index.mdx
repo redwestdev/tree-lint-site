@@ -1,0 +1,153 @@
+---
+title: Welcome to Tree-lint
+description: A file structure linter — describe your rules for files and folders, and Tree-lint checks them locally and in CI.
+template: splash
+hero:
+  tagline: Describe rules for files and folders in a config. Tree-lint checks names, folder composition, and the limits you set — locally and in CI.
+  actions:
+    - text: Try the example
+      link: /en/getting-started/quick-start/
+      icon: right-arrow
+    - text: View on GitHub
+      variant: minimal
+      link: https://github.com/redwestdev/tree-lint
+      icon: external
+---
+
+import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+## One problem — from agreement to fix
+
+The team agreed: a component is a folder with a `*.tsx` file and `index.ts`, and the folder name is no longer than 20 characters.
+
+```text
+src/
+└── components/
+    └── VeryLongComponentName/   ← 22 characters
+        ├── VeryLongComponentName.tsx
+        └── index.ts
+```
+
+The agreement is written in a config:
+
+```ts
+entities: {
+  component: {
+    matches: {
+      type: "directory",
+      name: "[A-Z]*",
+      children: [
+        { type: "file", name: "*.tsx" },
+        { type: "file", name: "index.ts" },
+      ],
+    },
+    rules: {
+      nameLength: {
+        type: "error",
+        max: 20,
+        message:
+          "Component folder name is too long: keep it within 20 characters.",
+      },
+    },
+  },
+},
+```
+
+Running `tree-lint scan` finds the violation and prints your own message:
+
+```text
+src/components/VeryLongComponentName
+  ✖ Component folder name is too long: keep it within 20 characters.
+
+Errors: 1, warnings: 0.
+```
+
+After renaming to `Icon`, the same command succeeds:
+
+```text
+Errors: 0, warnings: 0.
+
+✔ Validation complete successfully!
+```
+
+From now on the agreement is checked on every run — locally and in CI, the same way for everyone. The full scenario with the project tree, install commands, and an explanation of every config section is in the [Quick Start](/en/getting-started/quick-start/).
+
+## Three benefits
+
+<CardGrid stagger>
+  <Card
+    title="Your conventions, not someone else's template"
+    icon='list-format'
+  >
+    Tree-lint does not impose an architecture: you describe what is already
+    accepted in your project. No need to rebuild the codebase for the tool.
+  </Card>
+  <Card
+    title='A repeatable check instead of manual review comments'
+    icon='approve-check-circle'
+  >
+    Structure violations are found by a command run, not by a reviewer's eye.
+    The same rule works on every developer's machine and in CI.
+  </Card>
+  <Card title='Gradual adoption' icon='code-branch'>
+    Start with one directory, exclusions, and warnings. Turn warnings into
+    blocking errors as you bring the project in order.
+  </Card>
+</CardGrid>
+
+## Who it helps
+
+<CardGrid stagger>
+  <Card title='A team with structure conventions' icon='open-book'>
+    Write down "our way of doing things…" as an executable config and check it
+    locally and in CI, instead of review comments.
+  </Card>
+  <Card title='A legacy maintainer' icon='information'>
+    See where the file structure diverges from the target model and limit the
+    check to the part you have already agreed on.
+  </Card>
+  <Card title='A developer using code generation' icon='puzzle'>
+    Check an AI assistant's output with the same run as your own code: the rules
+    live in the repository, and deviations show up in the linter output.
+  </Card>
+</CardGrid>
+
+## How to start
+
+1. Install the package as a dev dependency: `npm install -D @redwestdev/tree-lint` (or `pnpm add -D`, `yarn add -D`).
+2. Describe a small scope in `tree-lint.config.ts`: one entity and one rule.
+3. Run `npx tree-lint scan` and fix what it finds.
+
+Details are on the [Installation](/en/getting-started/installation/) and [Quick Start](/en/getting-started/quick-start/) pages.
+
+## Boundaries and answers to doubts
+
+- **Do I need to change my architecture?** No. The config describes the existing structure, and rules apply only to what you described.
+- **Does Tree-lint replace a source code linter?** No. It checks file and folder names, their composition, and the limits you set — not code contents and not imports.
+- **Do I have to check the whole project?** No. `roots` and `ignore` limit the scope, and you can start with warnings instead of errors.
+- **What does the config give when working with AI?** The assistant can read the same rules, and its output is checked by the same run as your code.
+
+## Next
+
+<CardGrid>
+  <LinkCard
+    title='Quick Start'
+    description='First result: a violation found and fixed.'
+    href='/en/getting-started/quick-start/'
+  />
+  <LinkCard
+    title='Concepts'
+    description='How recognition and rules work together.'
+    href='/en/getting-started/concepts/'
+  />
+  <LinkCard
+    title='Architecture examples'
+    description='Ready-made config recipes for typical tasks.'
+    href='/en/getting-started/architecture-examples/'
+  />
+  <LinkCard
+    title='Validation rules'
+    description='Reference for all rules and their configuration.'
+    href='/en/rules/'
+  />
+</CardGrid>

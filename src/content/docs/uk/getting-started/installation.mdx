@@ -1,0 +1,46 @@
+---
+title: Встановлення
+description: Як встановити Tree-lint у проєкт через npm, pnpm або yarn.
+---
+
+import { LinkButton, Tabs, TabItem } from '@astrojs/starlight/components';
+
+Для роботи Tree-lint потрібен [Node.js](https://nodejs.org/) версії 18 або вище.
+
+<Tabs syncKey='pkg'>
+  <TabItem label='npm'>
+    ```bash npm install -D @redwestdev/tree-lint ```
+  </TabItem>
+  <TabItem label='pnpm'>```bash pnpm add -D @redwestdev/tree-lint ```</TabItem>
+  <TabItem label='yarn'>```bash yarn add -D @redwestdev/tree-lint ```</TabItem>
+</Tabs>
+
+Пакет встановлюється як dev-залежність і додає команду `tree-lint`.
+
+## Як запускати локально
+
+Команда `tree-lint` лежить у `node_modules/.bin` і доступна, коли менеджер пакетів додає цей каталог до `PATH`. Це відбувається:
+
+- усередині скриптів `package.json` — npm, pnpm і yarn додають локальний `node_modules/.bin` до `PATH` для кожного скрипта;
+- під час запуску через `npx tree-lint`, `pnpm exec tree-lint` або `yarn tree-lint`.
+
+Найпростіше додати скрипт:
+
+```json
+{
+  "scripts": {
+    "lint:tree": "tree-lint scan"
+  }
+}
+```
+
+і запускати його як `npm run lint:tree`, `pnpm lint:tree` або `yarn lint:tree`. Цей самий скрипт згодом знадобиться в CI: перевірка запускатиметься однією командою і локально, і в пайплайні.
+
+<LinkButton
+  icon='right-arrow'
+  iconPlacement='end'
+  variant='minimal'
+  href='/uk/getting-started/quick-start/'
+>
+  Перейти до першого запуску
+</LinkButton>

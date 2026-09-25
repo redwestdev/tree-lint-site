@@ -1,0 +1,147 @@
+---
+title: Використання перевірки custom
+description: 'Сигнатура функції-колбека, структура результату перевірки та приклади custom().'
+---
+
+`custom` — це звичайне правило, оголошене в блоці `rules` сутності, шару, групи або запису `_matches` для дочірніх елементів. Замість фіксованої логіки правило викликає вашу функцію, яка вирішує, чи пройдено перевірку. Доступне лише в конфігах `.ts` та `.js`.
+
+## Сигнатура колбека
+
+```typescript
+callback: (
+  node: Node,
+  results?: Partial<Record<string, IValidationResult>>[]
+) => boolean;
+```
+
+Тип `node` залежить від місця, де оголошено правило:
+
+| Де оголошено `custom`                           | Тип `node` у функції                                   |
+| ----------------------------------------------- | ------------------------------------------------------ |
+| `entities.*.rules`, `matches.type: "file"`      | `FileEntity`                                           |
+| `entities.*.rules`, `matches.type: "directory"` | `DirEntity`                                            |
+| `layers.*.rules`                                | `LayerNode`                                            |
+| `groups.rules`                                  | `GroupNode`                                            |
+| `rules.children[]` з `_matches`                 | `FileNode` або `DirNode` — за типом елемента зі збігом |
+
+Поля кожного типу — на сторінці [Поля node](/uk/rules/node-fields/).
+
+- У правила **обов'язковий `type`**. Без нього Tree-lint 0.0.5 падає з внутрішньою помилкою: `Cannot read properties of undefined (reading 'push')`.
+- Функція **має повертати булеве значення**. Будь-яке інше (включно з `undefined`, коли немає `return`) зараховується як порушення: "Custom rule must return a boolean, but returned &lt;type&gt;".
+- `results` — результати вбудованих перевірок (`name`, `nameLength`, `size`, `isEmpty`) для цього вузла: масив з одним об'єктом виду `{ [назва правила]: IValidationResult }`.
+- До `results` потрапляють лише перевірки, чиї параметри явно задані в конфігу. Перевірки `lineCount`, `childrenAmount` і `custom` **не** входять.
+- Параметр `message` замінює стандартний текст порушення у звіті.
+
+## Структура `IValidationResult`
+
+Схема довідкова — це тип із пакета, а не виконуваний код:
+
+```typescript
+interface IValidationResult {
+  result: boolean; // true, коли перевірку пройдено
+  violation?: {
+    // Деталі порушення, коли перевірку не пройдено
+    type: 'error' | 'warning';
+    path: string;
+    message: string;
+  };
+}
+```
+
+## Приклади
+
+### Перевірка файлової сутності
+
+`custom` оголошено у файловій сутності, тому `node` — це `FileEntity`: доступні `extension` і `lines`. Повний конфіг:
+
+```ts
+import { createConfig } from '@redwestdev/tree-lint';
+
+export default createConfig({
+  entities: {
+    util: {
+      matches: { type: 'file', name: '*.ts' },
+      rules: {
+        custom: {
+          type: 'error',
+          message: 'Файл утиліти не має бути порожнім',
+          callback: (node) => {
+            // node: FileEntity
+            return node.lines > 0;
+          },
+        },
+      },
+    },
+  },
+  layers: {
+    utils: { entities: ['util'] },
+  },
+});
+```
+
+### Перевірка папкової сутності
+
+Тут `node` — це `DirEntity`: доступні `children` та `entity`. Правило обмежує кількість дочірніх елементів папки компонента:
+
+```ts
+export default createConfig({
+  entities: {
+    component: {
+      matches: {
+        type: 'directory',
+        name: '[A-Z]*',
+        children: [{ type: 'file', name: '*.tsx' }],
+      },
+      rules: {
+        custom: {
+          type: 'warning',
+          callback: (node) => {
+            // node: DirEntity
+            return node.children.length <= 20;
+          },
+        },
+      },
+    },
+  },
+  layers: {
+    components: { entities: ['component'] },
+  },
+});
+```
+
+### Приклад із `results`
+
+`results` зручний, коли `custom` потрібно врахувати результати вбудованих правил. У конфігу нижче задані `name` і `nameLength`, тому обидва потраплять у `results`:
+
+```ts
+export default createConfig({
+  entities: {
+    util: {
+      matches: { type: 'file', name: '*.ts' },
+      rules: {
+        name: { type: 'warning', pattern: '+([a-z0-9-])' },
+        nameLength: { type: 'warning', min: 3, max: 30 },
+        custom: {
+          type: 'error',
+          message: 'Жодну перевірку імені не пройдено',
+          callback: (node, results) => {
+            // Коли інших правил немає — пропускаємо
+            if (!results || results.length === 0) return true;
+
+            // results — масив з одним об'єктом { name: ..., nameLength: ... }
+            const hasPassed = results.some((ruleResult) =>
+              Object.values(ruleResult).some((res) => res.result === true)
+            );
+
+            // false лише коли ВСІ перевірки не пройдено
+            return hasPassed;
+          },
+        },
+      },
+    },
+  },
+  layers: {
+    utils: { entities: ['util'] },
+  },
+});
+```

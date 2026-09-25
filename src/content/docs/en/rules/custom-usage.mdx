@@ -1,0 +1,147 @@
+---
+title: Using the custom check
+description: 'The signature of the callback function, the structure of the validation result, and custom() examples.'
+---
+
+`custom` is an ordinary rule declared in the `rules` block of an entity, a layer, a group, or a `_matches` entry for child elements. Instead of fixed logic, the rule calls your function, which decides whether the check passes. Available only in `.ts` and `.js` configs.
+
+## Callback signature
+
+```typescript
+callback: (
+  node: Node,
+  results?: Partial<Record<string, IValidationResult>>[]
+) => boolean;
+```
+
+The `node` type depends on where the rule is declared:
+
+| Where `custom` is declared                      | `node` type in the function                                  |
+| ----------------------------------------------- | ------------------------------------------------------------ |
+| `entities.*.rules`, `matches.type: "file"`      | `FileEntity`                                                 |
+| `entities.*.rules`, `matches.type: "directory"` | `DirEntity`                                                  |
+| `layers.*.rules`                                | `LayerNode`                                                  |
+| `groups.rules`                                  | `GroupNode`                                                  |
+| `rules.children[]` with `_matches`              | `FileNode` or `DirNode` — by the type of the matched element |
+
+Fields of each type are on the [Node fields](/en/rules/node-fields/) page.
+
+- The rule **must specify `type`**. Without it, Tree-lint 0.0.5 crashes with an internal error: `Cannot read properties of undefined (reading 'push')`.
+- The function **must return a boolean**. Any other value (including `undefined` when there is no `return`) counts as a violation: "Custom rule must return a boolean, but returned &lt;type&gt;".
+- `results` — the results of the predefined checks (`name`, `nameLength`, `size`, `isEmpty`) for this node: an array with one object of the form `{ [ruleName]: IValidationResult }`.
+- Only the checks whose parameters are explicitly set in the config make it into `results`. The `lineCount`, `childrenAmount`, and `custom` checks are **not** included.
+- The `message` parameter replaces the default violation text in the report.
+
+## The `IValidationResult` structure
+
+The schema is for reference — this is a type from the package, not runnable code:
+
+```typescript
+interface IValidationResult {
+  result: boolean; // true when the check passed
+  violation?: {
+    // Violation details when the check failed
+    type: 'error' | 'warning';
+    path: string;
+    message: string;
+  };
+}
+```
+
+## Examples
+
+### Checking a file entity
+
+`custom` is declared in a file entity, so `node` is a `FileEntity`: `extension` and `lines` are available. The complete config:
+
+```ts
+import { createConfig } from '@redwestdev/tree-lint';
+
+export default createConfig({
+  entities: {
+    util: {
+      matches: { type: 'file', name: '*.ts' },
+      rules: {
+        custom: {
+          type: 'error',
+          message: 'A utility file must not be empty',
+          callback: (node) => {
+            // node: FileEntity
+            return node.lines > 0;
+          },
+        },
+      },
+    },
+  },
+  layers: {
+    utils: { entities: ['util'] },
+  },
+});
+```
+
+### Checking a folder entity
+
+Here `node` is a `DirEntity`: `children` and `entity` are available. The rule limits the number of children of a component folder:
+
+```ts
+export default createConfig({
+  entities: {
+    component: {
+      matches: {
+        type: 'directory',
+        name: '[A-Z]*',
+        children: [{ type: 'file', name: '*.tsx' }],
+      },
+      rules: {
+        custom: {
+          type: 'warning',
+          callback: (node) => {
+            // node: DirEntity
+            return node.children.length <= 20;
+          },
+        },
+      },
+    },
+  },
+  layers: {
+    components: { entities: ['component'] },
+  },
+});
+```
+
+### An example using `results`
+
+`results` is handy when `custom` needs to take the outcomes of the predefined rules into account. In the config below, `name` and `nameLength` are set, so both make it into `results`:
+
+```ts
+export default createConfig({
+  entities: {
+    util: {
+      matches: { type: 'file', name: '*.ts' },
+      rules: {
+        name: { type: 'warning', pattern: '+([a-z0-9-])' },
+        nameLength: { type: 'warning', min: 3, max: 30 },
+        custom: {
+          type: 'error',
+          message: 'No name check passed',
+          callback: (node, results) => {
+            // When there are no other rules — skip
+            if (!results || results.length === 0) return true;
+
+            // results — an array with one object { name: ..., nameLength: ... }
+            const hasPassed = results.some((ruleResult) =>
+              Object.values(ruleResult).some((res) => res.result === true)
+            );
+
+            // false only when ALL checks failed
+            return hasPassed;
+          },
+        },
+      },
+    },
+  },
+  layers: {
+    utils: { entities: ['util'] },
+  },
+});
+```

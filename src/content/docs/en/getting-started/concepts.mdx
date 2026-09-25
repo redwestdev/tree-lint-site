@@ -1,0 +1,219 @@
+---
+title: Concepts
+description: 'How Tree-lint recognizes entities and applies rules: matches, rules, layers, and groups.'
+---
+
+Tree-lint works in two steps: first it **recognizes** entities by name and folder composition, then it **checks** them with rules. Rules only apply to recognized entities — this determines when to expect an error message and when silence.
+
+The configuration consists of five sections:
+
+```ts
+import { createConfig } from '@redwestdev/tree-lint';
+
+export default createConfig({
+  roots: ['src'], // directories to scan
+  ignore: ['node_modules', 'dist'], // what to skip
+  entities: {}, // entities
+  layers: {}, // layers
+  groups: {}, // groups (optional)
+});
+```
+
+## `roots` and `ignore`
+
+- `roots` — the directories inside which Tree-lint scans. Each root is scanned independently. The current directory is used by default.
+- `ignore` — a list of micromatch patterns. Files and folders matching a pattern are excluded from the scan. The pattern is matched against the full path relative to the project, for example `"**/*.test.ts"` or `"**/__mocks__"`.
+
+## Two steps: recognition and checking
+
+Let's take one tree and break down both parts on it:
+
+```text
+src/
+└── components/
+    ├── VeryLongComponentName/
+    │   ├── VeryLongComponentName.tsx
+    │   └── index.ts
+    ├── Icon/
+    │   └── Icon.tsx
+    └── button/
+        ├── Button.tsx
+        └── index.ts
+```
+
+The config describes the convention: a component is a folder with a name starting with an uppercase letter that must contain a `*.tsx` file and `index.ts`. The folder name is no longer than 20 characters:
+
+```ts
+export default createConfig({
+  roots: ['src'],
+  entities: {
+    component: {
+      matches: {
+        type: 'directory',
+        name: '[A-Z]*',
+        children: [
+          { type: 'file', name: '*.tsx' },
+          { type: 'file', name: 'index.ts' },
+        ],
+      },
+      rules: {
+        nameLength: { type: 'error', max: 20 },
+      },
+    },
+  },
+  layers: {
+    components: { entities: ['component'] },
+  },
+});
+```
+
+### How `matches` works
+
+- `type` — `"file"` or `"directory"`: which kind of nodes the entity applies to.
+- `name` — a micromatch glob for the node name. For files, the full name including the extension is matched.
+- `children` — directories only: the **required composition**. Every listed matcher must find its own distinct child; extra files and folders do not prevent the match.
+
+An entity is recognized only if **all** matchers matched. Now the three folders from the tree:
+
+1. `VeryLongComponentName` — the name and the composition matched. The folder is recognized as a component, `rules` apply to it, and the 22-character name violates `nameLength`:
+
+   ```text
+   src/components/VeryLongComponentName
+     ✖ Name length is outside the allowed character limits
+
+   Errors: 1, warnings: 0.
+   ```
+
+   The error blocks the run: the command exits with code `1`. Set your own message text with the `message` field — the example is in the [Quick Start](/en/getting-started/quick-start/).
+
+2. `Icon` — the name matched, but the composition is missing (`index.ts` is absent). The folder is **not recognized**, and no rules apply to it. A recognition warning appears instead of an error:
+
+   ```text
+   src/components/Icon
+     ⚠ It looks as component, but composition of child elements is invalid.
+   ```
+
+   Warnings do not block the run: with `Errors: 0` the command exits with code `0`.
+
+3. `button` — the composition matched, but the name did not. Again a warning, not an error:
+
+   ```text
+   src/components/button
+     ⚠ Name of component does not match the required pattern or convention.
+   ```
+
+   If neither the name nor the composition matched (for example, a `styles/` folder with a `global.css` file), the folder is simply not recognized — no messages and no rules.
+
+### Why a rule "did not fire"
+
+Recognition always comes before checking. If a folder does not match `matches`, this entity's `rules` do not apply to it — including `rules.name`. Therefore:
+
+- do not set the same glob in `matches.name` and `rules.name.pattern`: the rule would just duplicate a check that already passed. A separate rule is useful when it is stricter than recognition — for example, `matches.name: "[A-Z]*"` recognizes the folder, while `rules.name.pattern: "[A-Z][a-z]*"` requires a name made of letters;
+- to check a folder that does not pass `matches`, relax `matches` or use [groups](#groups).
+
+### Error and warning
+
+- `type: "error"` — the violation is printed as `✖`, the command exits with code `1`. Fits CI.
+- `type: "warning"` — the violation is printed as `⚠` and does not affect the exit code. Fits gradual adoption: first show the problem, then turn it into an error.
+
+## Layers
+
+**A layer** is a folder whose name **exactly** matches a key of the `layers` section (globs are not supported here). Layers are recognized at any depth inside `roots`:
+
+```ts
+layers: {
+  components: {
+    entities: ["component"], // entities recognized inside the layer
+    rules: { isEmpty: { type: "warning" } }, // optional rules for the layer itself
+  },
+},
+```
+
+Entities are looked for **only inside layers** (or inside another entity — see [nested entities](#nested-entities)). An entity not listed in any layer will never be recognized. Referencing an undeclared entity makes the config rejected with an error.
+
+## Groups
+
+**A group** is a way to apply rules to a folder by its name pattern without declaring it as an entity. Unlike `layers` and `entities`, `groups` is a single object:
+
+```ts
+groups: {
+  name: "[a-z]*",            // optional glob for the folder name
+  children: [                // if set — the required folder composition
+    { type: "file", name: "*.test.ts" },
+  ],
+  rules: {
+    nameLength: { type: "warning", max: 20 },
+  },
+},
+```
+
+Group specifics:
+
+- a group applies only to "plain" folders — those that did not become layers and were not recognized as entities;
+- the folder must contain at least one recognized child: an entity or another group. A folder with only unrecognized files does not fall under the group;
+- if `name` or `children` is set and the match is partial, a recognition warning is printed — just like with entities;
+- `rules` apply to the folder itself.
+
+## Nested entities
+
+A directory entity can declare its own nested entities via the `entities` field:
+
+```ts
+entities: {
+  page: {
+    matches: { type: "directory", name: "[A-Z]*" },
+    entities: ["section"], // inside every page, "section" entities are looked for
+  },
+
+  section: {
+    matches: {
+      type: "directory",
+      name: "[A-Z]*Sct",
+      children: [{ type: "file", name: "index.ts" }],
+    },
+  },
+},
+```
+
+Nested entities are recognized only inside the entity that declared them — even if they are not listed in any layer.
+
+## Rules for child elements (`_matches`)
+
+An entity's rules can be applied not to the entity itself but to its child elements matching a pattern:
+
+```ts
+entities: {
+  component: {
+    matches: {
+      type: "directory",
+      name: "[A-Z]*",
+      children: [{ type: "file", name: "*.tsx" }],
+    },
+    rules: {
+      children: [
+        {
+          _matches: { type: "file", name: "*.tsx" },
+          lineCount: { type: "warning", max: 200 },
+        },
+      ],
+    },
+  },
+},
+```
+
+Every child matching `_matches` gets the rules from the same object. Entries in `children` without `_matches` are ignored.
+
+## `init` templates
+
+`tree-lint init` generates a ready config. Two templates are available:
+
+- **default** — typical entities (`component`, `hook`, `page`, `util`, `service`, `context`, `typeFile`) with their layers and an example of rules for child elements with `_matches`.
+- **deep-tree** — everything from `default` plus a `groups` section and `custom()` check examples for entities.
+
+Both templates are a starting point: replace the example entities with your own architecture.
+
+## Next
+
+- [Quick Start](/en/getting-started/quick-start/) — go through the scenario with the same example;
+- [Validation rules](/en/rules/) — reference for all rules;
+- [Architecture examples](/en/getting-started/architecture-examples/) — ready configs for typical tasks.

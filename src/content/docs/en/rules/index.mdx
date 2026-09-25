@@ -1,0 +1,82 @@
+---
+title: Validation rules
+description: 'The list of available Tree-lint rules and their parameters.'
+---
+
+import { CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+## What `rules` is
+
+`rules` is a section of the Tree-lint config that describes the **checks** applied to the nodes of the project tree (files, folders, entities, and layers). Every rule answers one specific question: is the file name correct, is it too large, is the folder empty, and so on.
+
+Rules do not exist on their own — they are bound to the place where they are declared. You can set `rules` in four places:
+
+- **in an entity** (`entities.*.rules`) — apply to every matched entity;
+- **in a layer** (`layers.*.rules`) — apply to the layer folder itself;
+- **in a group** (`groups.rules`) — apply to folders matched by the group;
+- **for child elements** (`rules.children[]` with `_matches`) — apply to child elements matching the pattern, not to the entity itself.
+
+See [Concepts](/en/getting-started/concepts/) for details on where and how these sections are declared.
+
+## Data type
+
+`rules` is a plain **object** (in TypeScript terms, `Record<string, RuleConfig>`), where:
+
+- **key** — the rule name (`name`, `size`, `custom`, etc.);
+- **value** — an object with the rule parameters: limits (`min`/`max`), `pattern`, `type`, `message`, and for `custom()` also `callback`.
+
+```ts
+rules: {
+  name: { type: "error", pattern: "[a-z]*" },  // key → parameters object
+  size: { type: "warning", max: 100 },
+}
+```
+
+The violation level is set by the `type` field: `"error"` leads to a non-zero exit code of `tree-lint scan`, while `"warning"` only adds a warning to the report. The violation text can be overridden with the `message` field.
+
+## Role and use cases
+
+The role of `rules` is to turn the declarative description of the architecture into executable checks: everything described in `entities`, `layers`, and `groups` is validated through the rules from those sections.
+
+The available rules fall into two groups:
+
+- **Predefined** — ready checks with fixed logic and simple numeric/string parameters. They work in any config format (`.ts`, `.js`, `.json`, `.yaml`).
+- **`custom()`** — an arbitrary check based on a callback function that decides whether the check passes. Available only in `.ts` and `.js` configs.
+
+The full list of rules and their parameters is in the table below.
+
+| Rule             | Description           | Parameters            | Applies to |
+| :--------------- | :-------------------- | :-------------------- | :--------- |
+| `name`           | Naming (glob)         | `pattern` (string)    | All        |
+| `nameLength`     | Name length           | `min`, `max` (number) | All        |
+| `size`           | Size                  | `min`, `max` (number) | All        |
+| `lineCount`      | Line count            | `min`, `max` (number) | Files      |
+| `childrenAmount` | Number of child nodes | `min`, `max` (number) | Folders    |
+| `isEmpty`        | Emptiness check       | —                     | All        |
+| `custom()`       | Custom check          | `callback` (function) | All        |
+
+## How rules are measured
+
+A few details worth knowing before writing a config:
+
+- **`size`** — the size in **kilobytes** (KB), not bytes. Inside `custom()`, the `node.size` field contains bytes; divide it by `1024` to compare with this rule. `min` defaults to `1`; `max` is required — without it the rule always fails.
+- **`nameLength`** — the number of characters in the full name. For files the extension counts too: `Button.tsx` has length `10`. `min` defaults to `1`; `max` is required.
+- **`name`** — a [micromatch](https://github.com/micromatch/micromatch) glob pattern applied to the full name (for files, together with the extension). The pattern is required: an empty pattern always fails. Brace ranges work, for example `*.{ts,tsx}`.
+- **`lineCount`** — the number of lines in the file. `min` defaults to `1`; `max` is required.
+- **`childrenAmount`** — the number of direct child elements of the folder. `min` defaults to `1`; `max` is required.
+- **`isEmpty`** — the node size equals `0`. For folders the size is the sum of all nested files, so a folder containing only empty files counts as "empty".
+- **`custom()`** — the callback **must return a boolean**. Any other value (including `undefined` when there is no `return`) counts as a violation.
+- **`message`** — any rule accepts the `message` parameter, which replaces the default violation text in the scan report. Handy for explaining your own conventions.
+
+Rules can be set not only on the entity level, but also for matched child elements (`_matches`) and for `groups` — see [Concepts](/en/getting-started/concepts/).
+
+## What's next
+
+<CardGrid>
+  <LinkCard
+    title='Configuration examples'
+    href='/en/rules/configuration-examples/'
+  />
+  <LinkCard title='Node fields' href='/en/rules/node-fields/' />
+  <LinkCard title='The custom() check' href='/en/rules/custom-usage/' />
+</CardGrid>

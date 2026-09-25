@@ -1,0 +1,40 @@
+---
+title: Getting started
+description: What Tree-lint does, what it does not promise, and how to read the docs.
+---
+
+import { CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+Tree-lint is a file structure linter. You describe your file and folder conventions in a config, and Tree-lint checks them on every run — locally and in CI.
+
+## What it does
+
+- recognizes entities by name and folder composition;
+- checks names, required folder composition, name length, size, and number of children;
+- supports custom checks via `custom` with any message;
+- separates blocking errors from warnings;
+- limits the scope with `roots` and `ignore`;
+- fits into CI: the command exits with code `1` when there are errors and `0` otherwise.
+
+## What it does not promise
+
+- does not parse code contents or check imports — only the file structure;
+- does not fix the structure automatically — it shows the violation, and the developer fixes it;
+- does not support symbolic links — they are skipped during the scan.
+
+> Tree-lint is not tied to a particular architecture. It fits layered and modular structures, legacy code, and projects with code generation — anywhere a file and folder convention can be described.
+
+## Reading paths
+
+New to the tool? Start with the Quick Start to get the first result, and come back to the reference sections as questions arise.
+
+<CardGrid>
+  <LinkCard title='Installation' href='/en/getting-started/installation/' />
+  <LinkCard title='Quick Start' href='/en/getting-started/quick-start/' />
+  <LinkCard title='Concepts' href='/en/getting-started/concepts/' />
+  <LinkCard
+    title='Architecture examples'
+    href='/en/getting-started/architecture-examples/'
+  />
+  <LinkCard title='Validation rules' href='/en/rules/' />
+</CardGrid>

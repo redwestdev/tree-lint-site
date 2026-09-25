@@ -1,0 +1,100 @@
+---
+title: Configuration examples
+description: 'How to describe rules for files and folders in the Tree-lint config.'
+---
+
+The `rules` block describes checks and is always nested into a specific place of the config: an entity, a layer, a group, or a `_matches` entry for child elements. Two complete blocks are shown here — one for a file entity and one for a folder entity; place them into the `rules` of your own entity.
+
+Fields common to all rules:
+
+- **`type`** — the violation level: `"error"` or `"warning"`. Only errors lead to a non-zero exit code of `tree-lint scan`.
+- **`message`** — an optional text that replaces the default violation message in the report.
+- **`min` / `max`** — numeric limits. For numeric rules, `min` defaults to `1`; `max` has no default and must be set explicitly — otherwise the rule always fails.
+- The **`size`** limits are set in **kilobytes**.
+- **`name.pattern`** — a [micromatch](https://github.com/micromatch/micromatch) glob pattern applied to the full name (including the extension). This is not a regular expression: use glob syntax, for example `+([a-z0-9-])` instead of `^[a-z0-9-]+$`.
+
+## Rules for a file entity
+
+Files support `name`, `nameLength`, `size`, `lineCount`, `isEmpty`, and `custom`. An example for the `util` entity — a TypeScript file in the `utils` layer:
+
+```ts
+export default createConfig({
+  entities: {
+    util: {
+      matches: { type: 'file', name: '*.ts' },
+      rules: {
+        name: {
+          pattern: '+([a-z0-9-])',
+          type: 'error',
+          message:
+            'Name must contain only lowercase letters, digits, and hyphens',
+        },
+        nameLength: {
+          min: 3,
+          max: 20,
+          type: 'warning',
+        },
+        size: {
+          max: 100,
+          type: 'error',
+        },
+        lineCount: {
+          max: 200,
+          type: 'error',
+        },
+        isEmpty: {
+          type: 'error',
+        },
+      },
+    },
+  },
+  layers: {
+    utils: { entities: ['util'] },
+  },
+});
+```
+
+Here `nameLength` and `size` have both limits (`min` is omitted for `size` — the default `1` applies), and `lineCount` sets only `max`.
+
+## Rules for a folder entity
+
+Folders support `name`, `nameLength`, `size`, `childrenAmount`, `isEmpty`, and `custom`. An example for the `component` entity from the [Quick Start](/en/getting-started/quick-start/):
+
+```ts
+export default createConfig({
+  entities: {
+    component: {
+      matches: {
+        type: 'directory',
+        name: '[A-Z]*',
+        children: [
+          { type: 'file', name: '*.tsx' },
+          { type: 'file', name: 'index.ts' },
+        ],
+      },
+      rules: {
+        nameLength: {
+          max: 20,
+          type: 'error',
+          message:
+            'Component folder name is too long: keep it within 20 characters.',
+        },
+        childrenAmount: {
+          max: 10,
+          type: 'warning',
+        },
+        isEmpty: {
+          type: 'error',
+        },
+      },
+    },
+  },
+  layers: {
+    components: { entities: ['component'] },
+  },
+});
+```
+
+The checks from this block apply to the folder itself: `nameLength` — to its name, `childrenAmount` — to the number of direct child elements, `isEmpty` — to the total size of the contents.
+
+For details on how every rule is measured, see [Validation rules](/en/rules/).

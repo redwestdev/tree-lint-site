@@ -1,11 +1,17 @@
 ---
-title: Начало работы
+title: Обзор
 description: Что умеет Tree-lint, чего не обещает и как читать документацию.
 ---
 
 import { CardGrid, LinkCard } from '@astrojs/starlight/components';
 
-Tree-lint — линтер файловой структуры. Вы описываете в конфиге свои соглашения о файлах и папках, а Tree-lint проверяет их при каждом запуске — локально и в CI.
+Tree-lint — детерминированный линтер файловой структуры. Вы описываете в конфиге свои соглашения о файлах и папках, а Tree-lint проверяет их при каждом запуске — локально и в CI.
+
+## Какие задачи решает
+
+- **Борьба с хаосом в структуре** — соглашения о файлах и папках превращаются в исполняемые правила, которые проверяются при каждом запуске, а не на глаз при ревью.
+- **Подготовка контракта для ИИ** — единый файл правил, который может прочитать ИИ-ассистент и которым проверяется результат его работы.
+- **Ускорение онбординга** — новый разработчик видит принятую структуру и нарушения сразу, без пересказа «как у нас принято».
 
 ## Что умеет
 
@@ -31,10 +37,14 @@ Tree-lint — линтер файловой структуры. Вы описы�
 <CardGrid>
   <LinkCard title='Установка' href='/ru/getting-started/installation/' />
   <LinkCard title='Быстрый старт' href='/ru/getting-started/quick-start/' />
-  <LinkCard title='Концепции' href='/ru/getting-started/concepts/' />
+  <LinkCard title='Основные понятия' href='/ru/getting-started/concepts/' />
   <LinkCard
-    title='Примеры архитектур'
-    href='/ru/getting-started/architecture-examples/'
+    title='Форматы конфигурации'
+    href='/ru/configuration/config-formats/'
   />
-  <LinkCard title='Правила валидации' href='/ru/rules/' />
+  <LinkCard title='Рецепты архитектур' href='/ru/recipes/fsd/' />
+  <LinkCard
+    title='Справочник встроенных правил'
+    href='/ru/reference/built-in-rules/'
+  />
 </CardGrid>

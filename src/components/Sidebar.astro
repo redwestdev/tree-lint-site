@@ -1,0 +1,20 @@
+---
+import SidebarPersister from '@astrojs/starlight/components/SidebarPersister.astro';
+import SidebarSublist from '@astrojs/starlight/components/SidebarSublist.astro';
+import MobileMenuFooter from 'virtual:starlight/components/MobileMenuFooter';
+
+import { getRuSidebar } from '../data/ru-nav';
+
+const sidebar =
+  Astro.currentLocale === 'ru'
+    ? getRuSidebar(Astro.url.pathname)
+    : Astro.locals.starlightRoute.sidebar;
+---
+
+<SidebarPersister>
+  <SidebarSublist sublist={sidebar} />
+</SidebarPersister>
+
+<div class='md:sl-hidden'>
+  <MobileMenuFooter />
+</div>

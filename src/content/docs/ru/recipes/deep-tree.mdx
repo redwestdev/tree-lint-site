@@ -1,0 +1,96 @@
+---
+title: Deep Tree
+description: 'Рецепт конфигурации для глубоких деревьев компонентов: pages, sections, components, hooks.'
+---
+
+Платформенные и контентные проекты часто строятся глубокими деревьями: страницы (`pages`) содержат секции (`sections`), секции — компоненты (`components`), а рядом живут хуки (`hooks`). В Tree-lint такие уровни описываются слоями `layers`, а их содержимое — сущностями `entities`.
+
+Для древовидных структур предусмотрен отдельный шаблон инициализации: `tree-lint init --type deep-tree` добавляет к типовым сущностям секцию `groups` и примеры проверок `custom()`. Подробнее — на странице [Команды и флаги](/ru/cli/commands/).
+
+Ниже — рецепт для уровней `components` и `hooks`: контроль размера компонентов и хуков.
+
+## Компоненты и хуки
+
+**Задача.** Компонент не должен раздуваться: файл `*.tsx` — не длиннее 200 строк, хук — не длиннее 80 строк. Папка компонента обязана содержать `*.tsx` и `index.ts`.
+
+**Дерево:**
+
+```
+src/
+├── components/
+│   ├── Button/
+│   │   ├── Button.tsx      ← 250 строк
+│   │   └── index.ts
+│   └── Icon/
+│       ├── Icon.tsx
+│       └── index.ts
+└── hooks/
+    └── useDebounce.ts      ← 90 строк
+```
+
+**Конфиг:**
+
+```typescript
+import { createConfig } from '@redwestdev/tree-lint';
+
+export default createConfig({
+  roots: ['src'],
+  ignore: ['node_modules', 'dist'],
+
+  entities: {
+    component: {
+      matches: {
+        type: 'directory',
+        name: '[A-Z]*',
+        children: [
+          { type: 'file', name: '*.tsx' },
+          { type: 'file', name: 'index.ts' },
+        ],
+      },
+      rules: {
+        children: [
+          {
+            _matches: { type: 'file', name: '*.tsx' },
+            lineCount: { type: 'error', max: 200 },
+          },
+        ],
+      },
+    },
+
+    hook: {
+      matches: { type: 'file', name: 'use*.{ts,tsx}' },
+      rules: { lineCount: { type: 'warning', max: 80 } },
+    },
+  },
+
+  layers: {
+    components: { entities: ['component'] },
+    hooks: { entities: ['hook'] },
+  },
+});
+```
+
+**Что найдёт запуск:**
+
+```
+src/components/Button/Button.tsx
+  ✖ Line count in this file violates the maximum or minimum threshold
+
+src/hooks/useDebounce.ts
+  ⚠ Line count in this file violates the maximum or minimum threshold
+
+Errors: 1, warnings: 1.
+✖ Validation failed.
+```
+
+Ошибка блокирует запуск (код выхода 1). Исправление: разбить `Button.tsx` на несколько файлов — и проверка проходит с кодом выхода 0.
+
+**Границы этого рецепта:**
+
+- Распознаётся только компонент с полным составом детей. Папка без `index.ts` или пустая даёт предупреждение "It looks as component, but composition of child elements is invalid." — правила на неё не применяются, поэтому `isEmpty` для пустой папки здесь не сработает.
+- `use*.{ts,tsx}` распознаёт хуки только внутри папки `hooks` — слой ограничивает зону действия сущностей.
+
+## Дальше
+
+- [Слои](/ru/configuration/layers/) — как уровни дерева описываются секцией `layers`;
+- [Монорепо](/ru/recipes/monorepo/) — рецепт для нескольких пакетов.

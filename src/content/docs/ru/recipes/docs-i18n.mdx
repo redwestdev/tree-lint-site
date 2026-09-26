@@ -1,0 +1,90 @@
+---
+title: Документация и переводы
+description: 'Рецепт конфигурации для папки документации: только файлы .md и .mdx, а переводы — двумя строчными буквами.'
+---
+
+Рецепт описывает типовую структуру документации на Astro Starlight: файлы `.md` / `.mdx` в папке контента и переводы в `*.json`. Составлен по мотивам конфига самого сайта Tree-lint.
+
+**Задача.** В папке документации — только файлы `.md` и `.mdx`, а файлы переводов называются двумя строчными буквами (`en.json`, `ru.json`).
+
+**Дерево:**
+
+```
+content/
+├── docs/
+│   ├── getting-started.mdx
+│   ├── api.md
+│   └── README.txt              ← лишний формат
+└── i18n/
+    ├── ru.json
+    ├── en.json
+    └── uk-UA.json              ← имя не по правилу
+```
+
+**Конфиг:**
+
+```typescript
+import { createConfig } from '@redwestdev/tree-lint';
+
+export default createConfig({
+  roots: ['content'],
+  ignore: ['node_modules', 'dist'],
+
+  entities: {
+    doc: { matches: { type: 'file', name: '*.{md,mdx}' } },
+    translation: { matches: { type: 'file', name: '[a-z][a-z].json' } },
+  },
+
+  layers: {
+    docs: {
+      entities: ['doc'],
+      rules: {
+        custom: {
+          type: 'error',
+          message: 'В папке документации могут лежать только файлы .md и .mdx.',
+          callback: (node) =>
+            node.children.every(
+              (child) => child.extension === 'md' || child.extension === 'mdx'
+            ),
+        },
+      },
+    },
+    i18n: {
+      entities: ['translation'],
+      rules: {
+        custom: {
+          type: 'error',
+          message:
+            'Файл перевода должен называться двумя строчными буквами: en.json, ru.json.',
+          callback: (node) =>
+            node.children.every((child) =>
+              /^[a-z][a-z]\.json$/.test(child.name)
+            ),
+        },
+      },
+    },
+  },
+});
+```
+
+**Что найдёт запуск:**
+
+```
+content/docs
+  ✖ В папке документации могут лежать только файлы .md и .mdx.
+
+content/i18n
+  ✖ Файл перевода должен называться двумя строчными буквами: en.json, ru.json.
+
+Errors: 2, warnings: 0.
+✖ Validation failed.
+```
+
+Исправление: удалить `README.txt` и переименовать `uk-UA.json` в `uk.json` — проверка проходит.
+
+**Почему здесь нужен `custom`.** Сущность `doc` умеет распознавать только правильные файлы: `README.txt` под неё не подпадает, и без проверки на слое он остался бы незамеченным. Правило `custom` на слое видит всех детей папки — и подходящих, и лишних. Не забудьте `type: "error"` — без него Tree-lint 0.0.5 завершается внутренней ошибкой. Подробнее — в [Своих правилах](/ru/configuration/custom-rules/).
+
+## Дальше
+
+- [Свои правила](/ru/configuration/custom-rules/) — как устроены проверки `custom()`;
+- [Feature-Sliced Design (FSD)](/ru/recipes/fsd/) — следующий рецепт.

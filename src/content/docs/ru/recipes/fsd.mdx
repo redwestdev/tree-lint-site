@@ -1,0 +1,127 @@
+---
+title: Feature-Sliced Design (FSD)
+description: 'Готовый конфиг Tree-lint для методологии Feature-Sliced Design: слои app, pages, widgets, features, entities, shared.'
+---
+
+Каждый рецепт — это задача, дерево проекта, полный конфиг и результат запуска. Конфиг проверен на Tree-lint 0.0.5. Другие рецепты — на страницах [Deep Tree](/ru/recipes/deep-tree/), [Монорепо](/ru/recipes/monorepo/) и [Внедрение в легаси-проект](/ru/recipes/legacy-migration/).
+
+Правила в рецепте не повторяют шаблоны из `matches`: совпадение имени уже проверяется при распознавании, а `rules` добавляют то, чего распознавание не умеет — размер, длину имени, состав и собственные условия. Подробности — в [Основных понятиях](/ru/getting-started/concepts/).
+
+**Задача.** Закрепить файловые соглашения FSD: страницы, фичи и виджеты — отдельные типы папок с обязательным составом, а имя виджета — не длиннее 20 символов.
+
+**Дерево:**
+
+```
+src/
+├── pages/
+│   └── profile/
+│       ├── ProfilePage.tsx             ← 180 строк
+│       └── profile.module.css
+├── features/
+│   └── cart/
+│       ├── cart.tsx
+│       └── index.ts
+├── widgets/
+│   └── ProductCardWithVeryLongName/    ← 25 символов
+│       ├── ProductCardWithVeryLongName.tsx
+│       └── index.ts
+├── entities/
+│   └── user.model.ts
+└── shared/
+    └── lib/
+        └── format.lib.ts
+```
+
+**Конфиг:**
+
+```typescript
+import { createConfig } from '@redwestdev/tree-lint';
+
+export default createConfig({
+  roots: ['src'],
+  ignore: ['node_modules', 'dist'],
+
+  entities: {
+    page: {
+      matches: {
+        type: 'directory',
+        name: '[a-z]*',
+        children: [
+          { type: 'file', name: '*.tsx' },
+          { type: 'file', name: '*.module.css' },
+        ],
+      },
+      rules: {
+        children: [
+          {
+            _matches: { type: 'file', name: '*.tsx' },
+            lineCount: { type: 'warning', max: 150 },
+          },
+        ],
+      },
+    },
+
+    feature: {
+      matches: {
+        type: 'directory',
+        name: '[a-z]*',
+        children: [
+          { type: 'file', name: '*.tsx' },
+          { type: 'file', name: 'index.ts' },
+        ],
+      },
+    },
+
+    widget: {
+      matches: {
+        type: 'directory',
+        name: '[A-Z]*',
+        children: [
+          { type: 'file', name: '*.tsx' },
+          { type: 'file', name: 'index.ts' },
+        ],
+      },
+      rules: {
+        nameLength: {
+          type: 'error',
+          max: 20,
+          message: 'Имя виджета слишком длинное: уложитесь в 20 символов.',
+        },
+      },
+    },
+
+    model: { matches: { type: 'file', name: '*.model.ts' } },
+    lib: { matches: { type: 'file', name: '*.lib.ts' } },
+  },
+
+  layers: {
+    pages: { entities: ['page'] },
+    features: { entities: ['feature'] },
+    widgets: { entities: ['widget'] },
+    entities: { entities: ['model'] },
+    shared: { entities: ['lib'] },
+  },
+});
+```
+
+**Что найдёт запуск:**
+
+```
+src/pages/profile/ProfilePage.tsx
+  ⚠ Line count in this file violates the maximum or minimum threshold
+
+src/widgets/ProductCardWithVeryLongName
+  ✖ Имя виджета слишком длинное: уложитесь в 20 символов.
+
+Errors: 1, warnings: 1.
+✖ Validation failed.
+```
+
+**Границы этого рецепта.** Это адаптируемый пример файловых соглашений в духе FSD, а не полная проверка FSD: Tree-lint не анализирует импорты, не проверяет, что слой не зависит от вышележащих слоёв, и не следит за публичным API. Имена и состав детей в `matches` подстраивайте под структуру своего проекта.
+
+## Дальше
+
+- [Deep Tree](/ru/recipes/deep-tree/) — конфиг для древовидных платформ (`pages`, `sections`, `components`, `hooks`);
+- [Монорепо](/ru/recipes/monorepo/) — независимое сканирование нескольких пакетов;
+- [Внедрение в легаси-проект](/ru/recipes/legacy-migration/) — пошаговая стратегия внедрения;
+- [Документация и переводы](/ru/recipes/docs-i18n/) — рецепт по мотивам конфига этого сайта.

@@ -1,0 +1,42 @@
+---
+title: Интеграция с CI/CD
+description: 'Как встроить tree-lint в проверку PR (GitHub Actions) и в git-хуки через скрипты package.json и Husky.'
+---
+
+Tree-lint завершается с кодом `1`, когда есть ошибки, и с кодом `0`, когда их нет, — поэтому проверку легко встроить в любой конвейер: достаточно запустить `tree-lint scan`, и шаг упадёт при первой ошибке.
+
+## Скрипт в `package.json`
+
+Добавьте скрипт в `package.json`:
+
+```json
+{
+  "scripts": {
+    "lint:tree": "tree-lint scan"
+  }
+}
+```
+
+Теперь локально можно запускать `npm run lint:tree`, `pnpm lint:tree` или `yarn lint:tree`.
+
+## GitHub Actions
+
+В CI достаточно вызвать тот же скрипт — шаг упадёт при первой ошибке:
+
+```yaml
+- name: Lint file structure
+  run: pnpm lint:tree
+```
+
+> Если конфиг создаётся прямо на CI-агенте, используйте неинтерактивный режим: `tree-lint init --format ts --type deep-tree`. Подробнее — на странице [Команды и флаги](/ru/cli/commands/).
+
+## Git-хуки
+
+Тот же вызов подходит для pre-commit хука:
+
+```bash
+# .husky/pre-commit
+pnpm lint:tree
+```
+
+Хук сработает перед коммитом и не даст зафиксировать нарушение структуры.

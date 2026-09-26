@@ -1,0 +1,72 @@
+---
+interface Props {
+  treeLabel?: string;
+  configLabel?: string;
+}
+
+const { treeLabel = 'Структура', configLabel = 'Конфиг' } = Astro.props;
+---
+
+<div class='arch-split'>
+  <div class='arch-split__col'>
+    <p class='arch-split__label'>{treeLabel}</p>
+    <slot name='tree' />
+  </div>
+  <div class='arch-split__col'>
+    <p class='arch-split__label'>{configLabel}</p>
+    <slot name='config' />
+  </div>
+</div>
+
+<style>
+  .arch-split {
+    display: grid;
+    gap: 0.75rem 1rem;
+    align-items: start;
+    margin: 1.25rem 0;
+  }
+
+  /*
+   * В узкой колонке код должен оставаться без горизонтального скролла,
+   * поэтому размер шрифта меньше, чем в обычных блоках. Высокая
+   * специфичность нужна, чтобы перебить правило Expressive Code.
+   */
+  .arch-split .arch-split__col :global(.expressive-code pre > code) {
+    font-size: 0.75rem;
+  }
+
+  /*
+   * Две колонки включаются только там, где обе гарантированно влезают без
+   * горизонтального скролла: конфигу нужно ~380px, дереву — его натуральная
+   * ширина (до ~200px). Дерево забирает ровно столько, сколько просит, а
+   * остаток отдаётся коду: так самые длинные строки конфига (~50 символов)
+   * не упираются в горизонтальный скролл.
+   */
+  @media (min-width: 80rem) {
+    .arch-split {
+      grid-template-columns: minmax(0, max-content) minmax(0, 1fr);
+    }
+  }
+
+  .arch-split__col {
+    min-width: 0;
+  }
+
+  .arch-split__col :global(.tl-ft) {
+    margin-block: 0;
+    font-size: 0.75rem;
+  }
+
+  .arch-split__label {
+    margin: 0 0 0.25rem;
+    color: var(--sl-color-gray-3);
+    font-size: var(--sl-text-xs);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+
+  .arch-split__col :global(pre) {
+    margin: 0;
+  }
+</style>

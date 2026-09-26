@@ -1,0 +1,415 @@
+---
+/*
+ * Схема к вводному абзацу «Основные понятия»: узел дерева проходит
+ * распознавание, и только распознанная сущность проверяется правилами.
+ * Показаны оба исхода распознавания и все виды сообщений, включая тишину.
+ *
+ * Цвета берём из токенов Starlight, поэтому схема следует светлой и тёмной теме.
+ */
+---
+
+<div class='not-content tl-flow'>
+  <div class='tl-flow__start'>
+    <svg class='tl-flow__start-icon' viewBox='0 0 24 24' aria-hidden='true'>
+      <path
+        fill='currentColor'
+        d='M3.5 6.5A2.5 2.5 0 0 1 6 4h2.9a2.5 2.5 0 0 1 1.9.9l.6.7H18a2.5 2.5 0 0 1 2.5 2.5v9.4A2.5 2.5 0 0 1 18 20H6a2.5 2.5 0 0 1-2.5-2.5Z'
+      ></path>
+    </svg>
+    <span class='tl-flow__start-title'>Узел дерева</span>
+    <span class='tl-flow__start-sub'>папка или файл</span>
+  </div>
+
+  <div class='tl-flow__stem' aria-hidden='true'></div>
+
+  <div class='tl-flow__step'>
+    <span class='tl-flow__step-num'>1</span>
+    <div>
+      <p class='tl-flow__step-title'>Распознавание</p>
+      <p class='tl-flow__step-text'>
+        Все матчеры <code>matches</code> совпали?
+      </p>
+    </div>
+  </div>
+
+  <div class='tl-flow__fork' aria-hidden='true'>
+    <span class='tl-flow__fork-branch'></span>
+    <span class='tl-flow__fork-branch'></span>
+  </div>
+
+  <div class='tl-flow__lanes'>
+    <div class='tl-flow__lane tl-flow__lane--yes'>
+      <div class='tl-flow__lane-head'>
+        <span class='tl-flow__branch'>да</span>
+        <span class='tl-flow__lane-title'>Распознана</span>
+      </div>
+
+      <p class='tl-flow__lane-step'>
+        <span class='tl-flow__step-num tl-flow__step-num--small'>2</span>
+        <span>Проверка <code>rules</code></span>
+      </p>
+
+      <ul class='tl-flow__outcomes'>
+        <li class='tl-flow__outcome tl-flow__outcome--error'>
+          <span class='tl-flow__mark' aria-hidden='true'>✖</span>
+          <span>
+            Нарушено правило <code>type: "error"</code> →
+            <b class='tl-flow__result'>ошибка</b>
+          </span>
+        </li>
+        <li class='tl-flow__outcome tl-flow__outcome--warning'>
+          <span class='tl-flow__mark' aria-hidden='true'>⚠</span>
+          <span>
+            Нарушено правило <code>type: "warning"</code> →
+            <b class='tl-flow__result'>предупреждение</b>
+          </span>
+        </li>
+        <li class='tl-flow__outcome tl-flow__outcome--silent'>
+          <span class='tl-flow__mark' aria-hidden='true'>—</span>
+          <span>Нарушений нет → <b class='tl-flow__result'>тишина</b></span>
+        </li>
+      </ul>
+    </div>
+
+    <div class='tl-flow__lane tl-flow__lane--no'>
+      <div class='tl-flow__lane-head'>
+        <span class='tl-flow__branch'>нет</span>
+        <span class='tl-flow__lane-title'>Не распознана</span>
+      </div>
+
+      <p class='tl-flow__lane-step tl-flow__lane-step--off'>
+        <span
+          class='tl-flow__step-num tl-flow__step-num--small'
+          aria-hidden='true'>2</span
+        >
+        <span><code>rules</code> не применяются</span>
+      </p>
+
+      <ul class='tl-flow__outcomes'>
+        <li class='tl-flow__outcome tl-flow__outcome--warning'>
+          <span class='tl-flow__mark' aria-hidden='true'>⚠</span>
+          <span>
+            Имя или состав совпали частично →
+            <b class='tl-flow__result'>предупреждение</b>
+          </span>
+        </li>
+        <li class='tl-flow__outcome tl-flow__outcome--silent'>
+          <span class='tl-flow__mark' aria-hidden='true'>—</span>
+          <span>Совпадений нет → <b class='tl-flow__result'>тишина</b></span>
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<style>
+  .tl-flow {
+    --tl-flow-line: var(--sl-color-gray-4);
+    --tl-flow-border: var(--sl-color-hairline-light);
+    --tl-flow-surface: var(--ec-frm-edBg, var(--sl-color-bg-inline-code));
+
+    display: flex;
+    flex-direction: column;
+    margin-block: 1.5rem;
+    font-size: var(--sl-text-sm);
+    line-height: 1.45;
+  }
+
+  .tl-flow code {
+    padding: 0.1em 0.3em;
+    border-radius: 0.25em;
+    background-color: color-mix(in oklab, var(--sl-color-text) 8%, transparent);
+    font-family: var(--sl-font-mono);
+    font-size: 0.9em;
+  }
+
+  .tl-flow p {
+    margin: 0;
+  }
+
+  .tl-flow__start {
+    align-self: center;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.375rem 0.875rem;
+    border: 1px solid var(--tl-flow-border);
+    border-radius: 999px;
+    background-color: var(--tl-flow-surface);
+    font-weight: 600;
+  }
+
+  .tl-flow__start-icon {
+    width: 1.125em;
+    height: 1.125em;
+    color: var(--sl-color-gray-3);
+  }
+
+  .tl-flow__start-sub {
+    color: var(--sl-color-gray-3);
+    font-weight: 400;
+  }
+
+  .tl-flow__stem {
+    position: relative;
+    align-self: center;
+    width: 1px;
+    height: 1.5rem;
+    background-color: var(--tl-flow-line);
+  }
+
+  .tl-flow__stem::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    width: 7px;
+    height: 5px;
+    transform: translateX(-50%);
+    background-color: var(--tl-flow-line);
+    clip-path: polygon(0 0, 100% 0, 50% 100%);
+  }
+
+  .tl-flow__step {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--tl-flow-border);
+    border-radius: 0.5rem;
+    background-color: var(--tl-flow-surface);
+  }
+
+  .tl-flow__step-num {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 1.375rem;
+    height: 1.375rem;
+    border: 1px solid currentColor;
+    border-radius: 50%;
+    color: var(--sl-color-text-accent);
+    font-size: var(--sl-text-xs);
+    font-weight: 600;
+    line-height: 1;
+  }
+
+  .tl-flow__step-num--small {
+    width: 1.125rem;
+    height: 1.125rem;
+  }
+
+  .tl-flow__step-title {
+    font-weight: 600;
+    color: var(--sl-color-white);
+  }
+
+  .tl-flow__step-text {
+    margin-top: 0.125rem !important;
+  }
+
+  /*
+   * Разъезд на две ветки. Перекладина идёт от центра одной колонки до центра
+   * другой (при column-gap: 1rem это 25% - 0.25rem и 25% - 0.25rem от краёв),
+   * а стойка сверху соединяет её с карточкой первого шага.
+   */
+  .tl-flow__fork {
+    display: none;
+  }
+
+  @media (min-width: 42rem) {
+    .tl-flow__fork {
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: 1rem;
+      height: 1.5rem;
+      margin-top: 1rem;
+    }
+
+    .tl-flow__fork::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      right: calc(25% - 0.25rem);
+      left: calc(25% - 0.25rem);
+      height: 1px;
+      background-color: var(--tl-flow-line);
+    }
+
+    .tl-flow__fork::after {
+      content: '';
+      position: absolute;
+      top: -1rem;
+      left: 50%;
+      width: 1px;
+      height: 1rem;
+      background-color: var(--tl-flow-line);
+    }
+
+    .tl-flow__fork-branch {
+      position: relative;
+      justify-self: center;
+      width: 1px;
+      height: 100%;
+      background-color: var(--tl-flow-line);
+    }
+
+    .tl-flow__fork-branch::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      bottom: -1px;
+      width: 7px;
+      height: 5px;
+      transform: translateX(-50%);
+      background-color: var(--tl-flow-line);
+      clip-path: polygon(0 0, 100% 0, 50% 100%);
+    }
+  }
+
+  .tl-flow__lanes {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 1.25rem;
+  }
+
+  @media (min-width: 42rem) {
+    .tl-flow__lanes {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: 1rem;
+      row-gap: 0;
+    }
+  }
+
+  .tl-flow__lane {
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+    padding: 0.75rem 0.875rem 0.875rem;
+    border: 1px solid var(--tl-flow-border);
+    border-radius: 0.625rem;
+    background-color: var(--tl-flow-surface);
+  }
+
+  .tl-flow__lane--yes {
+    border-color: color-mix(
+      in oklab,
+      var(--sl-color-green) 45%,
+      var(--tl-flow-border)
+    );
+  }
+
+  .tl-flow__lane-head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding-bottom: 0.625rem;
+    border-bottom: 1px solid var(--tl-flow-border);
+  }
+
+  .tl-flow__branch {
+    display: inline-grid;
+    place-items: center;
+    min-width: 2.5rem;
+    padding: 0.0625rem 0.5rem;
+    border: 1px solid currentColor;
+    border-radius: 999px;
+    color: var(--sl-color-green);
+    font-size: var(--sl-text-xs);
+    font-weight: 600;
+    line-height: 1.5;
+  }
+
+  .tl-flow__lane--no .tl-flow__branch {
+    color: var(--sl-color-gray-3);
+  }
+
+  .tl-flow__lane-title {
+    font-weight: 600;
+    color: var(--sl-color-white);
+  }
+
+  .tl-flow__lane--yes .tl-flow__lane-title {
+    color: var(--sl-color-green-high);
+  }
+
+  .tl-flow__lane-step {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+  }
+
+  .tl-flow__lane-step--off {
+    color: var(--sl-color-gray-3);
+    font-weight: 400;
+  }
+
+  .tl-flow__lane-step--off .tl-flow__step-num {
+    border-style: dashed;
+    color: var(--sl-color-gray-4);
+  }
+
+  .tl-flow__outcomes {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .tl-flow__outcome {
+    --tl-flow-state: var(--sl-color-gray-4);
+    --tl-flow-state-text: var(--sl-color-gray-3);
+
+    display: grid;
+    grid-template-columns: 1.375rem minmax(0, 1fr);
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.375rem 0.5rem;
+    border-radius: 0.375rem;
+    background-color: color-mix(in oklab, var(--sl-color-text) 5%, transparent);
+  }
+
+  .tl-flow__outcome--error {
+    --tl-flow-state: var(--sl-color-red);
+    --tl-flow-state-text: var(--sl-color-red-high);
+  }
+
+  .tl-flow__outcome--warning {
+    --tl-flow-state: var(--sl-color-orange);
+    --tl-flow-state-text: var(--sl-color-orange-high);
+  }
+
+  .tl-flow__mark {
+    display: grid;
+    place-items: center;
+    width: 1.375rem;
+    height: 1.375rem;
+    border-radius: 50%;
+    background-color: color-mix(
+      in oklab,
+      var(--tl-flow-state) 18%,
+      transparent
+    );
+    color: var(--tl-flow-state-text);
+    font-size: 0.75rem;
+    line-height: 1;
+  }
+
+  .tl-flow__result {
+    padding: 0.0625rem 0.375rem;
+    border-radius: 0.3rem;
+    background-color: color-mix(
+      in oklab,
+      var(--tl-flow-state) 18%,
+      transparent
+    );
+    color: var(--tl-flow-state-text);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+</style>

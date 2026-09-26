@@ -1,0 +1,64 @@
+---
+title: Валидация группы
+description: 'Правила rules для папок, совпавших с группой: встроенные проверки и custom() на GroupNode.'
+---
+
+Правила группы объявляются в `groups.rules` и применяются к самой папке, совпавшей с группой. Это тот же набор правил, что и для слоя: `name`, `nameLength`, `size`, `childrenAmount`, `isEmpty` и `custom()`.
+
+```ts
+groups: {
+  name: "[a-z]*",
+  rules: {
+    nameLength: { type: "warning", max: 20 },
+    isEmpty: { type: "error" },
+  },
+},
+```
+
+## Как применяются правила группы
+
+- правила применяются только к папкам, которые **не стали слоями и не распознаны как сущности** — к «обычным» папкам;
+- внутри такой папки должен быть хотя бы один распознанный дочерний элемент (сущность или другая группа), иначе папка под группу не попадёт;
+- если заданы `name` или `children` и совпадение неполное, выводится предупреждение распознавания — как у сущностей.
+
+Подробнее о сопоставлении — на странице [Определение группы](/ru/matching/groups/).
+
+## Пример: `custom()` на папке группы
+
+В `custom` для группы `node` — это `GroupNode`: доступны `children` и базовые поля. Проверим, что в папках тестов все файлы имеют расширение `.test.ts`:
+
+```ts
+import { createConfig } from '@redwestdev/tree-lint';
+
+export default createConfig({
+  roots: ['src'],
+
+  entities: {
+    sourceFile: { matches: { type: 'file', name: '*.ts' } },
+  },
+
+  layers: {
+    modules: { entities: ['sourceFile'] },
+  },
+
+  groups: {
+    name: '*test*',
+    rules: {
+      custom: {
+        type: 'error',
+        message: 'В папках тестов допускаются только файлы *.test.ts.',
+        callback: (node) =>
+          node.children.every((child) => child.name.endsWith('.test.ts')),
+      },
+    },
+  },
+});
+```
+
+Не забудьте указать `type` — без него Tree-lint 0.0.5 завершается внутренней ошибкой. Подробнее об устройстве `custom()` — на странице [Валидация сущности](/ru/validation/entities/#свои-правила-custom).
+
+## Дальше
+
+- [Определение группы](/ru/matching/groups/) — как папки попадают в группу;
+- [Валидация сущности](/ru/validation/entities/) — полный список правил и `custom()`;
+- [Группы: понятие](/ru/concepts/groups/) — зачем нужны группы.

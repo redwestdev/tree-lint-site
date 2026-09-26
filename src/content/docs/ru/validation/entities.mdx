@@ -1,0 +1,381 @@
+---
+title: Валидация сущности
+description: 'Правила rules для сущностей: полный список встроенных проверок, их параметры, _matches для детей и свои правила custom().'
+---
+
+`rules` — секция конфига, которая описывает **проверки**, применяемые к распознанным сущностям. Каждое правило отвечает на один конкретный вопрос: правильное ли имя у файла, не слишком ли он большой, не пустая ли папка.
+
+## Где объявляются `rules`
+
+Правила привязаны к месту, где объявлены. Задать `rules` можно в четырёх местах:
+
+- **в сущности** (`entities.*.rules`) — применяются к каждой совпавшей сущности;
+- **в слое** (`layers.*.rules`) — применяются к самой папке-слою;
+- **в группе** (`groups.rules`) — применяются к папкам, совпавшим с группой;
+- **для дочерних элементов** (`rules.children[]` с `_matches`) — применяются к дочерним элементам, совпавшим с паттерном, а не к самой сущности.
+
+## Тип данных
+
+`rules` — это обычный объект (`Record<string, RuleConfig>`), где:
+
+- **ключ** — название правила (`name`, `size`, `custom` и т.д.);
+- **значение** — объект с параметрами: границы (`min`/`max`), `pattern`, `type`, `message`, а для `custom()` — ещё и `callback`.
+
+```ts
+rules: {
+  name: { type: "error", pattern: "[a-z]*" }, // ключ → объект параметров
+  size: { type: "warning", max: 100 },
+}
+```
+
+Уровень нарушения задаёт поле `type`: `"error"` приводит к ненулевому коду выхода `tree-lint scan`, а `"warning"` — только к предупреждению в отчёте. Текст нарушения переопределяется полем `message`.
+
+## Встроенные правила
+
+Доступные правила делятся на две группы:
+
+- **предопределённые** — готовые проверки с фиксированной логикой и простыми параметрами; работают в любом формате конфига (`.ts`, `.js`, `.json`, `.yaml`);
+- **`custom()`** — произвольная проверка на основе функции обратного вызова; доступна только в конфигах `.ts` и `.js`.
+
+| Правило          | Описание              | Параметры             | Применимо к |
+| :--------------- | :-------------------- | :-------------------- | :---------- |
+| `name`           | Именование (glob)     | `pattern` (string)    | Все         |
+| `nameLength`     | Длина имени           | `min`, `max` (number) | Все         |
+| `size`           | Размер                | `min`, `max` (number) | Все         |
+| `lineCount`      | Кол-во строк          | `min`, `max` (number) | Файлы       |
+| `childrenAmount` | Кол-во дочерних узлов | `min`, `max` (number) | Папки       |
+| `isEmpty`        | Проверка пустоты      | —                     | Все         |
+| `custom()`       | Произвольная проверка | `callback` (function) | Все         |
+
+### Как измеряются правила
+
+- **`size`** — размер в **килобайтах** (KB), а не в байтах. Внутри `custom()` поле `node.size` содержит байты; разделите его на `1024`, чтобы сравнивать с этим правилом. `min` по умолчанию равен `1`; `max` обязателен — без него правило всегда падает.
+- **`nameLength`** — количество символов полного имени. Для файлов учитывается и расширение: `Button.tsx` имеет длину `10`. `min` по умолчанию равен `1`; `max` обязателен.
+- **`name`** — glob-паттерн [micromatch](https://github.com/micromatch/micromatch), который применяется к полному имени (для файлов — вместе с расширением). Паттерн обязателен: пустой паттерн всегда падает. Работают диапазоны в фигурных скобках, например `*.{ts,tsx}`.
+- **`lineCount`** — количество строк в файле. `min` по умолчанию равен `1`; `max` обязателен.
+- **`childrenAmount`** — количество прямых дочерних элементов папки. `min` по умолчанию равен `1`; `max` обязателен.
+- **`isEmpty`** — размер узла равен `0`. Для папок размер — это сумма всех вложенных файлов, поэтому папка, содержащая только пустые файлы, считается «пустой».
+- **`custom()`** — callback **обязан возвращать boolean**. Любое другое значение (включая `undefined`, если нет `return`) считается нарушением.
+- **`message`** — любое правило принимает параметр `message`, который заменяет текст нарушения по умолчанию в отчёте сканирования.
+
+## Примеры блоков правил
+
+### Правила для сущности-файла
+
+Для файлов доступны `name`, `nameLength`, `size`, `lineCount`, `isEmpty` и `custom`. Пример для сущности `util` — TypeScript-файла в слое `utils`:
+
+```ts
+export default createConfig({
+  entities: {
+    util: {
+      matches: { type: 'file', name: '*.ts' },
+      rules: {
+        name: {
+          pattern: '+([a-z0-9-])',
+          type: 'error',
+          message: 'Имя должно содержать только строчные буквы, цифры и дефисы',
+        },
+        nameLength: {
+          min: 3,
+          max: 20,
+          type: 'warning',
+        },
+        size: {
+          max: 100,
+          type: 'error',
+        },
+        lineCount: {
+          max: 200,
+          type: 'error',
+        },
+        isEmpty: {
+          type: 'error',
+        },
+      },
+    },
+  },
+  layers: {
+    utils: { entities: ['util'] },
+  },
+});
+```
+
+У `nameLength` и `size` обе границы заданы (`min` опущен у `size` — действует значение по умолчанию `1`), а у `lineCount` задан только `max`.
+
+### Правила для сущности-папки
+
+Для папок доступны `name`, `nameLength`, `size`, `childrenAmount`, `isEmpty` и `custom`. Пример для сущности `component`:
+
+```ts
+export default createConfig({
+  entities: {
+    component: {
+      matches: {
+        type: 'directory',
+        name: '[A-Z]*',
+        children: [
+          { type: 'file', name: '*.tsx' },
+          { type: 'file', name: 'index.ts' },
+        ],
+      },
+      rules: {
+        nameLength: {
+          max: 20,
+          type: 'error',
+          message:
+            'Имя папки компонента слишком длинное: уложитесь в 20 символов.',
+        },
+        childrenAmount: {
+          max: 10,
+          type: 'warning',
+        },
+        isEmpty: {
+          type: 'error',
+        },
+      },
+    },
+  },
+  layers: {
+    components: { entities: ['component'] },
+  },
+});
+```
+
+Проверки из этого блока применяются к самой папке: `nameLength` — к её имени, `childrenAmount` — к числу прямых дочерних элементов, `isEmpty` — к суммарному размеру содержимого.
+
+## Правила для дочерних элементов (`_matches`)
+
+Правила сущности можно применить не к самой сущности, а к её дочерним элементам, совпавшим с паттерном:
+
+```ts
+entities: {
+  component: {
+    matches: {
+      type: "directory",
+      name: "[A-Z]*",
+      children: [{ type: "file", name: "*.tsx" }],
+    },
+    rules: {
+      children: [
+        {
+          _matches: { type: "file", name: "*.tsx" },
+          lineCount: { type: "warning", max: 200 },
+        },
+      ],
+    },
+  },
+},
+```
+
+Каждый дочерний элемент, совпавший с `_matches`, получает правила из этого же объекта. Записи в `children` без `_matches` игнорируются.
+
+## Свои правила (`custom()`)
+
+`custom` — обычное правило, которое объявляется в блоке `rules` сущности, слоя, группы или записи `_matches`. Вместо фиксированной логики правило вызывает вашу функцию, которая сама решает, пройдена проверка или нет. Доступно только в конфигах `.ts` и `.js`.
+
+### Сигнатура функции обратного вызова
+
+```typescript
+callback: (
+  node: Node,
+  results?: Partial<Record<string, IValidationResult>>[]
+) => boolean;
+```
+
+Тип `node` зависит от места объявления правила:
+
+| Место объявления `custom`                       | Тип `node` в функции                                   |
+| ----------------------------------------------- | ------------------------------------------------------ |
+| `entities.*.rules`, `matches.type: "file"`      | `FileEntity`                                           |
+| `entities.*.rules`, `matches.type: "directory"` | `DirEntity`                                            |
+| `layers.*.rules`                                | `LayerNode`                                            |
+| `groups.rules`                                  | `GroupNode`                                            |
+| `rules.children[]` с `_matches`                 | `FileNode` или `DirNode` — по типу совпавшего элемента |
+
+Важные требования:
+
+- в правиле **обязательно указывать `type`**. Без него Tree-lint 0.0.5 завершается внутренней ошибкой: `Cannot read properties of undefined (reading 'push')`;
+- функция **обязана возвращать boolean**. Любое другое значение (включая `undefined`, если нет `return`) считается нарушением: `Custom rule must return a boolean, but returned <type>`;
+- `results` — результаты предопределённых проверок (`name`, `nameLength`, `size`, `isEmpty`) для данного узла: массив с одним объектом вида `{ [ruleName]: IValidationResult }`;
+- в `results` попадают только те проверки, для которых в конфиге явно указаны параметры. Проверки `lineCount`, `childrenAmount` и `custom` туда **не входят**;
+- параметр `message` заменяет стандартный текст нарушения в отчёте.
+
+### Структура `IValidationResult`
+
+Схема для справки — это тип из пакета, а не исполняемый код:
+
+```typescript
+interface IValidationResult {
+  result: boolean; // true, если проверка пройдена
+  violation?: {
+    // Данные об ошибке, если проверка не пройдена
+    type: 'error' | 'warning';
+    path: string;
+    message: string;
+  };
+}
+```
+
+### Проверка файла-сущности
+
+`custom` объявлен в сущности-файле, поэтому `node` — это `FileEntity`: доступны `extension` и `lines`. Полный конфиг:
+
+```ts
+import { createConfig } from '@redwestdev/tree-lint';
+
+export default createConfig({
+  entities: {
+    util: {
+      matches: { type: 'file', name: '*.ts' },
+      rules: {
+        custom: {
+          type: 'error',
+          message: 'Файл утилиты не должен быть пустым',
+          callback: (node) => {
+            // node: FileEntity
+            return node.lines > 0;
+          },
+        },
+      },
+    },
+  },
+  layers: {
+    utils: { entities: ['util'] },
+  },
+});
+```
+
+### Проверка папки-сущности
+
+Здесь `node` — это `DirEntity`: доступны `children` и `entity`. Правило ограничивает число дочерних элементов папки компонента:
+
+```ts
+export default createConfig({
+  entities: {
+    component: {
+      matches: {
+        type: 'directory',
+        name: '[A-Z]*',
+        children: [{ type: 'file', name: '*.tsx' }],
+      },
+      rules: {
+        custom: {
+          type: 'warning',
+          callback: (node) => {
+            // node: DirEntity
+            return node.children.length <= 20;
+          },
+        },
+      },
+    },
+  },
+  layers: {
+    components: { entities: ['component'] },
+  },
+});
+```
+
+### Поля объекта `node`
+
+В функцию обратного вызова передаётся узел, тип которого зависит от места объявления правила — см. таблицу выше. Ниже — схемы полей для справки: блоки показывают состав полей, а не готовый к исполнению файл.
+
+**Базовые поля (доступны у всех узлов):**
+
+```ts
+{
+  name: string;        // Имя файла или папки
+  path: string;        // Полный путь к узлу
+  size: number;        // Размер в байтах; для папок — сумма всех вложенных файлов
+  ignored?: boolean;   // true, если узел совпал с паттерном ignore
+  unreadable?: boolean;// true, если узел не удалось прочитать
+  hidden?: boolean;    // true, если имя начинается с "."
+  isValid?: boolean;   // true по умолчанию; false — у узлов с нарушением уровня error
+  isExcluded?: boolean;// true, если ignored или unreadable — такой узел в проверках не участвует
+  rules?: object;      // Правила из конфига, применённые к этому узлу
+  validate?: () => []; // Служебный метод движка; внутри custom его вызывать не нужно
+}
+```
+
+Исключённые узлы (`isExcluded: true`) не попадают в правила: если узел дошёл до функции `custom`, он не исключён.
+
+**Дополнительные поля файлов (`FileNode`, `FileEntity`):**
+
+```ts
+{
+  ...BaseFields,
+  extension: string;   // Расширение файла без точки, например "ts"
+  lines: number;       // Количество строк в файле
+}
+```
+
+**Дополнительные поля папок (`DirNode`, `LayerNode`, `GroupNode`, `DirEntity`):**
+
+```ts
+{
+  ...BaseFields,
+  children: TAnyNode[]; // Массив дочерних узлов
+}
+```
+
+**Дополнительное поле сущностей (`FileEntity`, `DirEntity`):**
+
+```ts
+{
+  ...BaseFields,
+  entity: string; // Имя сущности из секции entities
+}
+```
+
+Итог по типам:
+
+| Тип узла     | Поля                            |
+| ------------ | ------------------------------- |
+| `FileNode`   | базовые + файловые              |
+| `DirNode`    | базовые + `children`            |
+| `FileEntity` | базовые + файловые + `entity`   |
+| `DirEntity`  | базовые + `children` + `entity` |
+| `LayerNode`  | базовые + `children`            |
+| `GroupNode`  | базовые + `children`            |
+
+### Использование `results`
+
+`results` удобно использовать, когда `custom` должен учесть итоги предопределённых правил. В конфиге ниже заданы `name` и `nameLength`, поэтому оба попадают в `results`:
+
+```ts
+export default createConfig({
+  entities: {
+    util: {
+      matches: { type: 'file', name: '*.ts' },
+      rules: {
+        name: { type: 'warning', pattern: '+([a-z0-9-])' },
+        nameLength: { type: 'warning', min: 3, max: 30 },
+        custom: {
+          type: 'error',
+          message: 'Не пройдена ни одна проверка имени',
+          callback: (node, results) => {
+            // Если других правил нет — пропускаем
+            if (!results || results.length === 0) return true;
+
+            // results — массив из одного объекта { name: ..., nameLength: ... }
+            const hasPassed = results.some((ruleResult) =>
+              Object.values(ruleResult).some((res) => res.result === true)
+            );
+
+            // false, только если ВСЕ проверки провалены
+            return hasPassed;
+          },
+        },
+      },
+    },
+  },
+  layers: {
+    utils: { entities: ['util'] },
+  },
+});
+```
+
+## Дальше
+
+- [Валидация слоя](/ru/validation/layers/) — правила для папки-слоя;
+- [Валидация группы](/ru/validation/groups/) — правила для папок группы;
+- [Устранение проблем и безопасность](/ru/reference/troubleshooting/) — что делать при непонятном поведении.

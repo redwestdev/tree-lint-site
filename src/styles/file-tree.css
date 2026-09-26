@@ -1,0 +1,74 @@
+/*
+ * File trees rendered by `src/plugins/file-tree-icons.mjs`.
+ * Colors come from Starlight's theme tokens, so light/dark follow the docs theme.
+ */
+.tl-ft {
+  /*
+   * Width of one nesting level. The plugin emits one cell per level, holding the
+   * four source characters of that level (`│   `, `├── `); anything that does not
+   * fit is clipped, so the step can be narrowed without touching the documents.
+   */
+  --tl-ft-indent-step: 2ch;
+
+  margin-block: 1rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--sl-color-hairline-light);
+  border-radius: 0.5rem;
+  background-color: var(--ec-frm-edBg, var(--sl-color-bg-inline-code));
+  font-family: var(--sl-font-mono, var(--sl-font-system-mono));
+  font-size: var(--sl-text-sm, 0.875rem);
+  line-height: 1.5;
+  overflow-x: auto;
+}
+
+.tl-ft-line {
+  display: flex;
+  align-items: center;
+  white-space: pre;
+  border-radius: 0.25rem;
+}
+
+.tl-ft-line:hover {
+  background-color: color-mix(in oklab, var(--sl-color-text) 8%, transparent);
+}
+
+/*
+ * Starlight spaces block elements in markdown content with `--sl-content-gap-y`
+ * (`.sl-markdown-content :not(...) + :not(...)`), which would add a full gap
+ * between every tree row. The more specific selector here keeps the rows tight.
+ */
+.tl-ft .tl-ft-line,
+.tl-ft .tl-ft-icon {
+  margin-block: 0;
+}
+
+/* Branch guides (`│   ├── `) come from the source text, so they keep their alignment. */
+.tl-ft-guides {
+  flex: none;
+  width: var(--tl-ft-indent-step);
+  overflow: hidden;
+  color: var(--sl-color-gray-4);
+}
+
+.tl-ft-icon {
+  flex: none;
+  width: 1.15em;
+  height: 1.15em;
+  margin-right: 0.4em;
+}
+
+/* `--tl-ft-c` is the icon's main color, set per row by the plugin. */
+.tl-ft-name {
+  color: color-mix(
+    in oklab,
+    var(--tl-ft-c, var(--sl-color-white)) 55%,
+    var(--sl-color-white)
+  );
+}
+
+/* Annotations (`← 250 lines`) line up in a column on the right, like an IDE hint. */
+.tl-ft-annotation {
+  margin-left: auto;
+  padding-left: 2em;
+  color: var(--sl-color-gray-3);
+}

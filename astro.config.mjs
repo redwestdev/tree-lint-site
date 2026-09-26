@@ -21,6 +21,13 @@ export default defineConfig({
   integrations: [
     starlight({
       title: 'Tree Lint',
+      // Сайт закрыт от индексации поисковыми ботами.
+      head: [
+        {
+          tag: 'meta',
+          attrs: { name: 'robots', content: 'noindex, nofollow' },
+        },
+      ],
       defaultLocale: 'en',
       locales: {
         en: {

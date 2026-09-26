@@ -1,40 +1,41 @@
 ---
-title: Getting started
-description: What Tree-lint does, what it does not promise, and how to read the docs.
+title: Getting Started
+description: Why you need Tree-lint, its limitations, and how to navigate this documentation.
 ---
 
 import { CardGrid, LinkCard } from '@astrojs/starlight/components';
 
-Tree-lint is a file structure linter. You describe your file and folder conventions in a config, and Tree-lint checks them on every run — locally and in CI.
+Tree-lint is a file structure linter. The concept is simple: you define your project's structure conventions in a config file, and the tool automatically keeps everything in check. You can run checks locally or right in your CI pipeline.
 
-## What it does
+## Features
 
-- recognizes entities by name and folder composition;
-- checks names, required folder composition, name length, size, and number of children;
-- supports custom checks via `custom` with any message;
-- separates blocking errors from warnings;
-- limits the scope with `roots` and `ignore`;
-- fits into CI: the command exits with code `1` when there are errors and `0` otherwise.
+- recognizing entities by folder names and their contents;
+- checking names, required files, name length, file size, and item count;
+- your own rules via `custom` with tailored error messages;
+- separating strict (blocking) errors from simple warnings;
+- limiting the scanning scope with `roots` and `ignore`;
+- CI integration: exits with code `1` when violations are found, and `0` when everything passes.
 
-## What it does not promise
+## Limitations
 
-- does not parse code contents or check imports — only the file structure;
-- does not fix the structure automatically — it shows the violation, and the developer fixes it;
-- does not support symbolic links — they are skipped during the scan.
+What Tree-lint doesn't do:
+- **code or import analysis** — it only checks file structure and naming conventions;
+- **auto-fixing** — it highlights violations, but changes are made by the developer;
+- **symbolic links (symlinks)** — they are skipped during scanning.
 
-> Tree-lint is not tied to a particular architecture. It fits layered and modular structures, legacy code, and projects with code generation — anywhere a file and folder convention can be described.
+> Tree-lint is architecture-agnostic. It works equally well for layered or modular structures, legacy codebases, and code-generated projects — anywhere you can define clear file organization rules.
 
-## Reading paths
+## How to use this documentation
 
-New to the tool? Start with the Quick Start to get the first result, and come back to the reference sections as questions arise.
+If you are new to the tool, we recommend starting with the "Quick Start" to see it in action right away. You can refer back to the other sections as a reference whenever questions arise.
 
 <CardGrid>
   <LinkCard title='Installation' href='/en/getting-started/installation/' />
   <LinkCard title='Quick Start' href='/en/getting-started/quick-start/' />
   <LinkCard title='Concepts' href='/en/getting-started/concepts/' />
   <LinkCard
-    title='Architecture examples'
+    title='Architecture Examples'
     href='/en/getting-started/architecture-examples/'
   />
-  <LinkCard title='Validation rules' href='/en/rules/' />
+  <LinkCard title='Validation Rules' href='/en/rules/' />
 </CardGrid>

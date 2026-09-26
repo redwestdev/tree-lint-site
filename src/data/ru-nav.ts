@@ -57,6 +57,7 @@ export const RU_NAV: RuNavEntry[] = [
         label: '🔍 Определение (Matching)',
         collapsed: false,
         entries: [
+          link('Как покрыть проект', '/ru/matching/coverage/'),
           link('Определение сущности', '/ru/matching/entities/'),
           link('Определение слоя', '/ru/matching/layers/'),
           link('Определение группы', '/ru/matching/groups/'),

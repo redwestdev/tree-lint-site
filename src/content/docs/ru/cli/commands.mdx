@@ -1,5 +1,5 @@
 ---
-title: Команды и флаги
+title: Команды и флаги CLI (scan / init)
 description: 'Справочник по командам tree-lint init и tree-lint scan и их флагам.'
 ---
 
@@ -60,22 +60,31 @@ tree-lint init --format ts --type deep-tree
 - `path` (по умолчанию) - группировка по пути в файловой системе:
 
   ```text
-  src/components/VeryLongComponentName
-    ✖ Имя папки компонента слишком длинное: уложитесь в 20 символов.
+  src/hooks/useThisHookNameIsDefinitelyTooLong.ts
+    ⚠ Name length is outside the allowed character limits
+
+  src/hooks/use_foo.ts
+    ✖ Хук: use + camelCase.
   ```
 
 - `severity` - группировка по уровню (`error`, `warning`):
 
   ```text
   ✖ ERRORS:
-    Имя папки компонента слишком длинное: уложитесь в 20 символов. - src/components/VeryLongComponentName
+    Хук: use + camelCase. - src/hooks/use_foo.ts
+
+  ⚠ WARNINGS:
+    Name length is outside the allowed character limits - src/hooks/useThisHookNameIsDefinitelyTooLong.ts
   ```
 
 - `rule` - группировка по тексту нарушенного правила:
 
   ```text
-  Имя папки компонента слишком длинное: уложитесь в 20 символов.
-    ✖ src/components/VeryLongComponentName
+  Name length is outside the allowed character limits
+    ⚠ src/hooks/useThisHookNameIsDefinitelyTooLong.ts
+
+  Хук: use + camelCase.
+    ✖ src/hooks/use_foo.ts
   ```
 
 ## Дальше

@@ -34,37 +34,56 @@ const link = (label: string, href: string): RuNavLink => ({
 });
 
 export const RU_NAV: RuNavEntry[] = [
+  link('🚀 Быстрый старт', '/ru/getting-started/quick-start/'),
   {
     type: 'group',
-    label: '📂 Быстрый старт',
+    label: '📚 Основы и концепция',
     collapsed: false,
     entries: [
-      link('Обзор', '/ru/getting-started/'),
-      link('Установка', '/ru/getting-started/installation/'),
-      link('Быстрый старт', '/ru/getting-started/quick-start/'),
-      link('Основные понятия', '/ru/getting-started/concepts/'),
-    ],
-  },
-  {
-    type: 'group',
-    label: '⚙️ Конфигурация',
-    collapsed: false,
-    entries: [
-      link('Форматы конфигурации', '/ru/configuration/config-formats/'),
-      link('Корни и исключения', '/ru/configuration/roots-ignore/'),
-      link('Сущности и совпадения', '/ru/configuration/entities-matches/'),
-      link('Слои', '/ru/configuration/layers/'),
-      link('Свои правила', '/ru/configuration/custom-rules/'),
-    ],
-  },
-  {
-    type: 'group',
-    label: '🛠️ CLI и интеграции',
-    collapsed: false,
-    entries: [
-      link('Команды и флаги', '/ru/cli/commands/'),
-      link('Интеграция с CI/CD', '/ru/cli/ci-cd/'),
-      link('Контракт для ИИ-ассистентов', '/ru/cli/ai-contract/'),
+      {
+        type: 'group',
+        label: '💡 Концепция',
+        collapsed: false,
+        entries: [
+          link('Вступление', '/ru/concepts/intro/'),
+          link('Слои', '/ru/concepts/layers/'),
+          link('Сущности', '/ru/concepts/entities/'),
+          link('Группы', '/ru/concepts/groups/'),
+          link('Флоу работы', '/ru/concepts/workflow/'),
+        ],
+      },
+      {
+        type: 'group',
+        label: '🔍 Определение (Matching)',
+        collapsed: false,
+        entries: [
+          link('Определение сущности', '/ru/matching/entities/'),
+          link('Определение слоя', '/ru/matching/layers/'),
+          link('Определение группы', '/ru/matching/groups/'),
+        ],
+      },
+      {
+        type: 'group',
+        label: '✅ Правила валидации',
+        collapsed: false,
+        entries: [
+          link('Валидация слоя', '/ru/validation/layers/'),
+          link('Валидация группы', '/ru/validation/groups/'),
+          link('Валидация сущности', '/ru/validation/entities/'),
+        ],
+      },
+      {
+        type: 'group',
+        label: '⚙️ Конфигурация',
+        collapsed: false,
+        entries: [
+          link('Форматы конфигурации', '/ru/configuration/config-formats/'),
+          link(
+            'Корни (roots) и исключения (ignore)',
+            '/ru/configuration/roots-ignore/'
+          ),
+        ],
+      },
     ],
   },
   {
@@ -72,11 +91,17 @@ export const RU_NAV: RuNavEntry[] = [
     label: '🏛️ Рецепты архитектур',
     collapsed: false,
     entries: [
+      link('DeepTree', '/ru/recipes/deep-tree/'),
       link('Feature-Sliced Design (FSD)', '/ru/recipes/fsd/'),
-      link('Deep Tree', '/ru/recipes/deep-tree/'),
-      link('Монорепо', '/ru/recipes/monorepo/'),
-      link('Внедрение в легаси-проект', '/ru/recipes/legacy-migration/'),
-      link('Документация и переводы', '/ru/recipes/docs-i18n/'),
+    ],
+  },
+  {
+    type: 'group',
+    label: '🛠️ CLI и Автоматизация',
+    collapsed: false,
+    entries: [
+      link('Команды и флаги CLI (scan / init)', '/ru/cli/commands/'),
+      link('Интеграция с CI/CD и Git Hooks', '/ru/cli/ci-cd/'),
     ],
   },
   {
@@ -84,7 +109,6 @@ export const RU_NAV: RuNavEntry[] = [
     label: '📖 Справочник',
     collapsed: false,
     entries: [
-      link('Справочник встроенных правил', '/ru/reference/built-in-rules/'),
       link(
         'Устранение проблем и безопасность',
         '/ru/reference/troubleshooting/'

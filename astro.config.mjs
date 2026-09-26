@@ -1,7 +1,10 @@
 // @ts-check
+import { satteri } from '@astrojs/markdown-satteri';
 import starlight from '@astrojs/starlight';
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'astro/config';
+
+import fileTreeIcons from './src/plugins/file-tree-icons.mjs';
 
 // https://astro.build/config
 export default defineConfig({
@@ -12,11 +15,27 @@ export default defineConfig({
   redirects: {
     '/': '/en/',
     // Старые адреса русской документации после переезда на новую структуру.
-    '/ru/rules/': '/ru/reference/built-in-rules/',
-    '/ru/rules/configuration-examples/': '/ru/reference/built-in-rules/',
-    '/ru/rules/custom-usage/': '/ru/configuration/custom-rules/',
-    '/ru/rules/node-fields/': '/ru/configuration/custom-rules/',
+    '/ru/rules/': '/ru/validation/entities/',
+    '/ru/rules/configuration-examples/': '/ru/validation/entities/',
+    '/ru/rules/custom-usage/': '/ru/validation/entities/',
+    '/ru/rules/node-fields/': '/ru/validation/entities/',
     '/ru/getting-started/architecture-examples/': '/ru/recipes/fsd/',
+    // Переезд на новую структуру разделов: «Концепция», «Определение», «Валидация».
+    '/ru/getting-started/': '/ru/concepts/intro/',
+    '/ru/getting-started/installation/': '/ru/getting-started/quick-start/',
+    '/ru/getting-started/concepts/': '/ru/concepts/intro/',
+    '/ru/configuration/entities-matches/': '/ru/matching/entities/',
+    '/ru/configuration/layers/': '/ru/concepts/layers/',
+    '/ru/configuration/custom-rules/': '/ru/validation/entities/',
+    '/ru/cli/ai-contract/': '/ru/concepts/intro/',
+    '/ru/recipes/monorepo/': '/ru/configuration/roots-ignore/',
+    '/ru/recipes/legacy-migration/': '/ru/configuration/roots-ignore/',
+    '/ru/recipes/docs-i18n/': '/ru/validation/layers/',
+    '/ru/reference/built-in-rules/': '/ru/validation/entities/',
+  },
+  // Примеры файловой структуры рисуются иконками Material Icon Theme.
+  markdown: {
+    processor: satteri({ hastPlugins: [fileTreeIcons()] }),
   },
   integrations: [
     starlight({
@@ -47,7 +66,7 @@ export default defineConfig({
         Sidebar: './src/components/Sidebar.astro',
         Pagination: './src/components/Pagination.astro',
       },
-      customCss: ['./src/styles/global.css'],
+      customCss: ['./src/styles/global.css', './src/styles/file-tree.css'],
       social: [
         {
           icon: 'github',
@@ -74,6 +93,11 @@ export default defineConfig({
               label: 'Quick start',
               translations: { ru: 'Быстрый старт', uk: 'Швидкий старт' },
               link: 'getting-started/quick-start',
+            },
+            {
+              label: 'Concepts',
+              translations: { ru: 'Концепции', uk: 'Концепції' },
+              link: 'getting-started/concepts',
             },
             {
               label: 'Architecture examples',

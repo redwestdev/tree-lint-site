@@ -1,145 +1,192 @@
 ---
 title: Быстрый старт
-description: 'Один сквозной пример: найдите ошибку в структуре, исправьте её и закрепите проверку в команде.'
+description: 'Установка, генератор конфига с примером для React, первый scan и проверка в CI.'
 ---
 
 import { LinkButton, Tabs, TabItem } from '@astrojs/starlight/components';
+import ArchSplit from '../../../../components/ArchSplit.astro';
 
-Этот раздел — один сквозной пример: от установки до исправленной ошибки. Все команды и конфиг относятся к одному и тому же маленькому проекту, поэтому шаги можно проходить по порядку и повторять на своём проекте.
-
-Представим, что команда договорилась о структуре компонентов:
-
-- каждый компонент лежит в собственной папке внутри `src/components`;
-- имя папки начинается с заглавной буквы и не длиннее 20 символов;
-- внутри папки обязательно есть файл с расширением `.tsx` и файл `index.ts`.
-
-Папка `VeryLongComponentName` нарушает второе правило: в имени 22 символа.
-
-Начнём с такого маленького проекта:
-
-```
-src/
-└── components/
-    └── VeryLongComponentName/
-        ├── VeryLongComponentName.tsx
-        └── index.ts
-```
-
-Создайте его в папке своего учебного проекта — например, `my-tree-lint-demo`, — или возьмите уже существующий проект с подобной структурой. Далее все шаги выполняются внутри этого проекта.
+Tree-lint сверяет структуру папок и файлов с вашими правилами — за миллисекунды и без разбора содержимого кода. Ниже — короткий путь от установки до первой исправленной ошибки и проверки в CI.
 
 ## 1. Установите пакет
 
 <Tabs syncKey='pkg'>
   <TabItem label='npm'>
-    ```bash npm install -D @redwestdev/tree-lint ```
+
+```bash
+npm install -D @redwestdev/tree-lint
+```
+
   </TabItem>
-  <TabItem label='pnpm'>```bash pnpm add -D @redwestdev/tree-lint ```</TabItem>
-  <TabItem label='yarn'>```bash yarn add -D @redwestdev/tree-lint ```</TabItem>
+  <TabItem label='pnpm'>
+
+```bash
+pnpm add -D @redwestdev/tree-lint
+```
+
+  </TabItem>
+  <TabItem label='yarn'>
+
+```bash
+yarn add -D @redwestdev/tree-lint
+```
+
+  </TabItem>
 </Tabs>
 
-Подробнее про установку и локальный запуск команды — на странице [Установка](/ru/getting-started/installation/).
+Для работы Tree-lint требуется [Node.js](https://nodejs.org/) версии 18 или выше. Пакет устанавливается как dev-зависимость и добавляет команду `tree-lint` в `node_modules/.bin`.
 
-## 2. Опишите договорённости в конфиге
+Локально команда доступна тремя способами: внутри скриптов `package.json` (менеджер пакетов сам добавляет локальный `node_modules/.bin` в `PATH`), через `npx tree-lint`, `pnpm exec tree-lint` или `yarn tree-lint`. Проще всего сразу завести скрипт `"lint:tree": "tree-lint scan"` — он же пригодится в CI на шаге 4.
 
-Создайте в корне проекта файл `tree-lint.config.ts`:
+## 2. Создайте конфиг под свой стек
+
+Конфиг не нужно писать вручную — сгенерируйте основу одной командой:
+
+```bash
+npx tree-lint init
+```
+
+Генератор спросит формат (`ts`, `js`, `json`, `yaml`) и тип шаблона (`default` или `deep-tree`) и создаст файл конфига в текущем каталоге. Дальше достаточно подставить правила под свою архитектуру.
+
+### Выберите свою архитектуру
+
+Описывайте только те папки, за которыми хотите следить: всё остальное tree-lint пропускает. Ниже — пример для React-хуков: дерево слева, конфиг справа.
+
+Импорт во всех примерах одинаковый — дальше не повторяем:
 
 ```ts
 import { createConfig } from '@redwestdev/tree-lint';
+```
 
+**Задача.** Хуки всегда в camelCase — иначе ошибка; слишком длинное имя — предупреждение. Хук распознаётся только по приставке `use`, формат файла не важен.
+
+<Tabs syncKey='stack'>
+  <TabItem label='React.js'>
+    Хук — это файл, имя которого начинается с `use`. `useCounter.ts` дерево проходит, `use_foo.ts` ловит ошибку, а `useThisHookNameIsDefinitelyTooLong.ts` — предупреждение.
+
+    <ArchSplit>
+      <Fragment slot='tree'>
+
+```tree
+src/
+├── hooks/
+│   ├── useCounter.ts
+│   ├── use_foo.ts
+│   └── useThisHookNameIsDefinitelyTooLong.ts
+└── utils/
+    └── useSettings.ts
+```
+
+      </Fragment>
+      <Fragment slot='config'>
+
+```ts title="tree-lint.config.ts"
 export default createConfig({
-  roots: ['src'], // где сканировать
-  ignore: ['node_modules', 'dist'], // что пропускать
+  roots: ['src'],
 
   entities: {
-    component: {
-      matches: {
-        type: 'directory',
-        name: '[A-Z]*', // имя папки начинается с заглавной буквы
-        children: [
-          // обязательный состав папки компонента
-          { type: 'file', name: '*.tsx' },
-          { type: 'file', name: 'index.ts' },
-        ],
-      },
+    hook: {
+      matches: { type: 'file', name: 'use*' },
       rules: {
-        nameLength: {
+        name: {
           type: 'error',
-          max: 20,
-          message:
-            'Имя папки компонента слишком длинное: уложитесь в 20 символов.',
+          pattern: 'use[A-Z]*',
+          message: 'Хук: use + camelCase.',
         },
+        nameLength: { type: 'warning', max: 30 },
       },
     },
   },
 
   layers: {
-    components: {
-      entities: ['component'], // искать компоненты внутри папок components
-    },
+    hooks: { entities: ['hook'] },
   },
 });
 ```
 
-Что здесь написано:
+      </Fragment>
+    </ArchSplit>
 
-- `matches` — как **распознать** компонент: папка, имя которой начинается с заглавной буквы, с обязательным составом из `.tsx`-файла и `index.ts`. Распознавание само по себе не выводит ошибок — оно только решает, где применять правила.
-- `rules.nameLength` — **проверка** для каждой распознанной папки: длина имени не больше 20 символов. `message` — собственный текст ошибки на русском.
-- `layers.components` — компоненты распознаются только внутри папок с именем `components` на любой глубине внутри `roots`.
+    Что за что отвечает:
 
-Как эти секции работают вместе, подробно разобрано в [Основных понятиях](/ru/getting-started/concepts/).
+    - `matches` — как распознаётся сущность. Маска — синтаксис micromatch и применяется к полному имени файла: `use*` означает «начинается с `use`» и не ограничивает расширение — подойдёт и `useCounter.ts`, и `useCounter.js`.
+    - `rules.name` — формат имени распознанных файлов: маска `use[A-Z]*` требует после `use` заглавную букву, то есть camelCase. `use_foo.ts` её не проходит и падает ошибкой с текстом из `message`.
+    - `rules.nameLength` — предел длины имени: длиннее 30 символов — предупреждение. У файлов длина считается вместе с расширением: `useThisHookNameIsDefinitelyTooLong.ts` — 37 символов.
+    - `layers` — папки по точному имени и сущности, которые в них ищутся: `hooks` — только `hook`. Сущности распознаются только внутри слоёв, поэтому `src/utils/useSettings.ts` не проверяется — он лежит вне `hooks`, хотя имя и начинается с `use`.
 
-## 3. Запустите проверку
-
-<Tabs syncKey='pkg'>
-  <TabItem label='npm'>```bash npx tree-lint scan ```</TabItem>
-  <TabItem label='pnpm'>```bash pnpm exec tree-lint scan ```</TabItem>
-  <TabItem label='yarn'>```bash yarn tree-lint scan ```</TabItem>
+  </TabItem>
 </Tabs>
 
-В выводе — найденное нарушение:
+Предупреждения (`⚠`) печатаются, но код выхода не меняют: сборку роняет только ошибка — так правила можно вводить постепенно.
+
+Подробнее про правила — на странице [Валидация сущности](/ru/validation/entities/), про концепцию — в [Вступлении](/ru/concepts/intro/).
+
+## 3. Запустите сканирование и исправьте первую ошибку
+
+<Tabs syncKey='pkg'>
+  <TabItem label='npm'>
+
+```bash
+npx tree-lint scan
+```
+
+  </TabItem>
+  <TabItem label='pnpm'>
+
+```bash
+pnpm exec tree-lint scan
+```
+
+  </TabItem>
+  <TabItem label='yarn'>
+
+```bash
+yarn tree-lint scan
+```
+
+  </TabItem>
+</Tabs>
+
+Вернёмся к дереву из шага 2: `use_foo.ts` нарушает camelCase, а имя `useThisHookNameIsDefinitelyTooLong.ts` не укладывается в 30 символов. Первый запуск:
+
+<Tabs syncKey='stack'>
+  <TabItem label='React.js'>
 
 ```text
-src/components/VeryLongComponentName
-  ✖ Имя папки компонента слишком длинное: уложитесь в 20 символов.
+src/hooks/useThisHookNameIsDefinitelyTooLong.ts
+  ⚠ Name length is outside the allowed character limits
 
-Errors: 1, warnings: 0.
+src/hooks/use_foo.ts
+  ✖ Хук: use + camelCase.
+
+Errors: 1, warnings: 1.
 
 ✖ Validation failed.
 ```
 
-Что важно в этом выводе:
+  </TabItem>
+</Tabs>
 
-- нарушение относится к папке `VeryLongComponentName` — сканирование идёт от `src`;
-- текст ошибки — ваш собственный `message`, а не служебное сообщение;
-- при наличии ошибок команда завершается с кодом `1`, поэтому проверку можно встроить в CI.
+Текст предупреждения у встроенного `nameLength` фиксированный — поэтому на английском; у ошибки сообщение своё, из поля `message`. Ошибка `✖` завершает команду с кодом `1`. Переименуем `use_foo.ts` в `useFoo.ts` и запустим ещё раз:
 
-Одни только предупреждения (`warning`) код выхода не меняют: при `Errors: 0` команда завершается с кодом `0`.
-
-Полный список флагов `scan` — на странице [Команды и флаги](/ru/cli/commands/).
-
-## 4. Исправьте нарушение и запустите снова
-
-Переименуйте папку вместе с файлом внутри неё:
-
-```
-src/
-└── components/
-    └── Icon/
-        ├── Icon.tsx
-        └── index.ts
-```
-
-и повторите команду сканирования:
+<Tabs syncKey='stack'>
+  <TabItem label='React.js'>
 
 ```text
-Errors: 0, warnings: 0.
+src/hooks/useThisHookNameIsDefinitelyTooLong.ts
+  ⚠ Name length is outside the allowed character limits
+
+Errors: 0, warnings: 1.
 
 ✔ Validation complete successfully!
 ```
 
-Проверка прошла: структура соответствует конфигу, а следующее такое нарушение будет поймано ещё до ревью.
+  </TabItem>
+</Tabs>
 
-## 5. Закрепите проверку в команде
+Ошибка ушла — и команда вернула код `0`, хотя предупреждение осталось: длинное имя можно сократить позже. На коде выхода и строится проверка в CI. Все флаги `scan` — на странице [Команды и флаги](/ru/cli/commands/).
+
+## 4. Закрепите проверку в проекте
 
 Добавьте скрипт в `package.json`:
 
@@ -151,62 +198,36 @@ Errors: 0, warnings: 0.
 }
 ```
 
-Теперь локально можно запускать `npm run lint:tree`, `pnpm lint:tree` или `yarn lint:tree`.
-
-В CI достаточно вызвать тот же скрипт — шаг упадёт при первой ошибке:
+Тот же вызов подойдёт и для pre-commit хука, и для шага CI:
 
 ```yaml
 - name: Lint file structure
   run: pnpm lint:tree
 ```
 
-Тот же вызов подходит для pre-commit хука:
-
-```bash
-# .husky/pre-commit
-pnpm lint:tree
-```
-
-Подробнее о встраивании проверки в CI и git-хуки — на странице [Интеграция с CI/CD](/ru/cli/ci-cd/).
-
----
-
-Дальше — справочная часть: создание конфига через `init`, форматы файла и флаги `scan`. Для первого запуска она не нужна.
-
-## Создание конфига через `init`
-
-Вместо файла вручную можно сгенерировать шаблон конфига командой:
-
-```bash
-tree-lint init
-```
-
-Команда создаёт файл `tree-lint.config` в текущем каталоге. Поддерживается интерактивный и неинтерактивный режим.
-
-**Интерактивный режим** (TTY-терминал вне CI) - команда запросит недостающие параметры через prompt и предложит подтверждение перед созданием файла. Если выбор не устраивает, можно вернуться и указать параметры заново.
-
-**Неинтерактивный режим** (CI) - все параметры должны быть переданы явно через флаги:
-
-```bash
-tree-lint init --format ts --type deep-tree
-```
-
-Полный список флагов `init` и доступные шаблоны — на странице [Команды и флаги](/ru/cli/commands/).
-
 <LinkButton
   icon='right-arrow'
   iconPlacement='end'
   variant='minimal'
-  href='/ru/getting-started/concepts/'
+  href='/ru/cli/ci-cd/'
 >
-  Как работают распознавание и правила
+  CI, Husky и pre-commit
 </LinkButton>
 
 <LinkButton
   icon='right-arrow'
   iconPlacement='end'
   variant='minimal'
-  href='/ru/reference/built-in-rules/'
+  href='/ru/validation/entities/'
 >
-  Справочник встроенных правил
+  Свои правила на TypeScript
+</LinkButton>
+
+<LinkButton
+  icon='right-arrow'
+  iconPlacement='end'
+  variant='minimal'
+  href='/ru/cli/commands/'
+>
+  Все команды и флаги
 </LinkButton>

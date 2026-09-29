@@ -1,29 +1,107 @@
 ---
 interface Props {
+  title?: string;
   treeLabel?: string;
   configLabel?: string;
+  variant?: 'stacked' | 'columns' | 'slide';
 }
 
-const { treeLabel = 'Структура', configLabel = 'Конфиг' } = Astro.props;
+const { title, treeLabel, configLabel, variant = 'columns' } = Astro.props;
+const slideGroup = `arch-split-${crypto.randomUUID()}`;
+const isSlide = variant === 'slide';
 ---
 
-<div class='arch-split'>
-  <div class='arch-split__col'>
-    <p class='arch-split__label'>{treeLabel}</p>
-    <slot name='tree' />
-  </div>
-  <div class='arch-split__col'>
-    <p class='arch-split__label'>{configLabel}</p>
-    <slot name='config' />
+<div class:list={['arch-split', `arch-split--variant-${variant}`]}>
+  {
+    (title || isSlide) && (
+      <div class='arch-split__header'>
+        {title && <h3 class='arch-split__title'>{title}</h3>}
+        {isSlide && (
+          <div
+            class='arch-split__toggles'
+            role='group'
+            aria-label='Переключение между структурой и конфигурацией'
+          >
+            <input
+              class='arch-split__toggle-input arch-split__toggle-input--tree'
+              id={`${slideGroup}-tree`}
+              type='radio'
+              name={slideGroup}
+              value='tree'
+              aria-label={treeLabel || 'Структура'}
+              checked
+            />
+            <label class='arch-split__toggle' for={`${slideGroup}-tree`}>
+              {treeLabel}
+            </label>
+            <input
+              class='arch-split__toggle-input arch-split__toggle-input--config'
+              id={`${slideGroup}-config`}
+              type='radio'
+              name={slideGroup}
+              value='config'
+              aria-label={configLabel || 'Конфигурация'}
+            />
+            <label class='arch-split__toggle' for={`${slideGroup}-config`}>
+              {configLabel}
+            </label>
+          </div>
+        )}
+      </div>
+    )
+  }
+  <div class='arch-split__panels'>
+    <div
+      class='arch-split__col arch-split__col--tree'
+      role={isSlide ? 'region' : undefined}
+      aria-label={isSlide ? treeLabel || 'Структура' : undefined}
+    >
+      <div class='arch-split__heading'>
+        {treeLabel && <p class='arch-split__label'>{treeLabel}</p>}
+      </div>
+      <slot name='tree' />
+    </div>
+    <div
+      class='arch-split__col arch-split__col--config'
+      role={isSlide ? 'region' : undefined}
+      aria-label={isSlide ? configLabel || 'Конфигурация' : undefined}
+    >
+      <div class='arch-split__heading'>
+        {configLabel && <p class='arch-split__label'>{configLabel}</p>}
+      </div>
+      <slot name='config' />
+    </div>
   </div>
 </div>
 
 <style>
   .arch-split {
-    display: grid;
+    margin: 1.25rem 0;
+  }
+
+  .arch-split__header {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .arch-split__title {
+    margin: 0;
+    font-size: var(--sl-text-lg);
+    line-height: 1.2;
+  }
+
+  .arch-split__panels {
+    display: flex;
+    flex-wrap: wrap;
     gap: 0.75rem 1rem;
     align-items: start;
-    margin: 1.25rem 0;
+  }
+
+  .arch-split > .arch-split__panels {
+    margin-top: 0;
   }
 
   /*
@@ -35,35 +113,106 @@ const { treeLabel = 'Структура', configLabel = 'Конфиг' } = Astro
     font-size: 0.75rem;
   }
 
-  /*
-   * Две колонки включаются только там, где обе гарантированно влезают без
-   * горизонтального скролла: конфигу нужно ~380px, дереву — его натуральная
-   * ширина (до ~200px). Дерево забирает ровно столько, сколько просит, а
-   * остаток отдаётся коду: так самые длинные строки конфига (~50 символов)
-   * не упираются в горизонтальный скролл.
-   */
-  @media (min-width: 80rem) {
-    .arch-split {
-      grid-template-columns: minmax(0, max-content) minmax(0, 1fr);
-    }
-  }
-
   .arch-split__col {
+    flex: 1 1 100%;
     min-width: 0;
   }
 
-  .arch-split__col :global(.tl-ft) {
-    margin-block: 0;
+  .arch-split__toggles {
+    display: inline-flex;
+    gap: 0.125rem;
+    padding: 0.125rem;
+    border: 1px solid var(--sl-color-gray-5);
+    border-radius: 0.4rem;
+  }
+
+  .arch-split__toggle-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .arch-split__toggle {
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    color: var(--sl-color-gray-2);
+    cursor: pointer;
+    font-size: var(--sl-text-xs);
+    line-height: 1.2;
+  }
+
+  .arch-split__toggle-input:checked + .arch-split__toggle {
+    background: var(--sl-color-gray-6);
+    color: var(--sl-color-text);
+    font-weight: 600;
+  }
+
+  .arch-split__toggle-input:focus-visible + .arch-split__toggle {
+    outline: 2px solid var(--sl-color-text-accent);
+    outline-offset: 2px;
+  }
+
+  .arch-split--variant-slide .arch-split__col {
+    display: none;
+    flex: 1 1 100%;
+  }
+
+  .arch-split--variant-slide:has(.arch-split__toggle-input--tree:checked)
+    .arch-split__col--tree,
+  .arch-split--variant-slide:has(.arch-split__toggle-input--config:checked)
+    .arch-split__col--config {
+    display: block;
+  }
+
+  /* Let content influence the column widths on wider screens. */
+  @media (min-width: 80rem) {
+    .arch-split--variant-columns .arch-split__col {
+      flex: 1 1 auto;
+    }
+  }
+
+  @media (min-width: 40rem) {
+    .arch-split__header {
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+    }
+  }
+
+  .arch-split__col > :global(.tl-ft),
+  .arch-split__col > :global(.expressive-code) {
+    margin: 0;
+  }
+
+  .arch-split__col > :global(.tl-ft) {
     font-size: 0.75rem;
   }
 
+  .arch-split__heading {
+    display: flex;
+    box-sizing: border-box;
+    height: 1.2em;
+    align-items: flex-start;
+    margin-bottom: 0.25rem;
+    font-size: var(--sl-text-xs);
+    line-height: 1.2;
+  }
+
   .arch-split__label {
-    margin: 0 0 0.25rem;
+    margin: 0;
     color: var(--sl-color-gray-3);
     font-size: var(--sl-text-xs);
     font-weight: 600;
     letter-spacing: 0.02em;
     text-transform: uppercase;
+    white-space: nowrap;
   }
 
   .arch-split__col :global(pre) {

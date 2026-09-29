@@ -3,30 +3,400 @@ title: Сущности
 description: 'Сущность — именованный тип узлов проекта: как она устроена и как связана с распознаванием и правилами.'
 ---
 
-**Сущность** — именованный тип узлов проекта, который Tree-lint распознаёт по `matches` и проверяет правилами `rules`. Сущности объявляются в секции `entities` конфига:
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+import ArchSplit from '../../../../components/ArchSplit.astro';
 
-```ts
-entities: {
-  component: {
-    matches: {
-      type: 'directory',
-      name: '[A-Z]*',
-      children: [
-        { type: 'file', name: '*.tsx' },
-        { type: 'file', name: 'index.ts' },
-      ],
-    },
-    rules: {
-      nameLength: { type: 'error', max: 20 },
-    },
-  },
-},
+**Сущность** — именованный тип узлов проекта. В секции `entities` конфига поле `matches` задаёт, какие узлы распознавать, а `rules` — какие проверки применять к распознанным узлам.
+
+Сущностью может быть отдельный файл, например файл-хук или файл-модель, либо папка, например компонент или страница. Соглашения о содержимом папок можно проверять правилами `rules`.
+
+Сущность может иметь сложную структуру и глубокую вложенность.
+
+> Внутри сущности можно описывать вложенные сущности — например, собственные стили, хуки или подкомпоненты.
+
+## Примеры структуры проекта и конфигурации
+
+Слой задаёт контекст, в котором Tree-lint ищет сущность. Подробнее о слоях — в разделе [Слои](/ru/concepts/layers/).
+
+<Tabs syncKey='entity-example'>
+  <TabItem label='Простой пример'>
+    Хуки, компоненты и helpers распознаются по именам, а соответствующие слои ограничивают проверку одноимёнными
+    папками.
+
+    <ArchSplit variant='slide' treeLabel='Структура проекта' configLabel='Конфигурация'>
+      <Fragment slot='tree'>
+
+```tree
+src/
+├── components/
+│   └── CounterButton/
+│       ├── CounterButton.module.css
+│       ├── CounterButton.tsx
+│       └── index.ts
+├── helpers/
+│   └── createSlug.ts
+└── hooks/
+    └── useCounter.ts
 ```
 
-Сущность описывает соглашение о конкретном виде файлов или папок: «компонент — это папка с `*.tsx` и `index.ts`», «хук — это файл с именем `use*`». Одна сущность отвечает на два вопроса:
+      </Fragment>
+      <Fragment slot='config'>
 
-- **как распознать узел** — поле `matches`: тип узла, шаблон имени и обязательный состав папки;
-- **что проверить** — поле `rules`: правила, которые применяются к каждому распознанному узлу.
+```ts title="tree-lint.config.ts"
+import { createConfig } from '@redwestdev/tree-lint';
+
+export default createConfig({
+  roots: ['src'],
+
+  entities: {
+    hook: {
+      matches: { type: 'file', name: 'use*' },
+      rules: {
+        name: { type: 'error', pattern: 'use[A-Z]*' },
+      },
+    },
+    component: {
+      matches: { type: 'directory', name: '[A-Z]*' },
+      rules: {
+        children: [
+          {
+            _matches: { type: 'file', name: '*.tsx' },
+            lineCount: { type: 'warning', max: 300 },
+          },
+          {
+            _matches: { type: 'file', name: 'index.ts' },
+            lineCount: { type: 'warning', max: 100 },
+          },
+          {
+            _matches: { type: 'file', name: '*.module.css' },
+            lineCount: { type: 'warning', max: 200 },
+          },
+        ],
+      },
+    },
+    helper: {
+      matches: { type: 'file', name: 'create*.ts' },
+      rules: {
+        lineCount: { type: 'warning', max: 200 },
+      },
+    },
+  },
+
+  layers: {
+    components: { entities: ['component'] },
+    helpers: { entities: ['helper'] },
+    hooks: { entities: ['hook'] },
+  },
+});
+```
+
+      </Fragment>
+    </ArchSplit>
+
+  </TabItem>
+
+  <TabItem label='Базовые сущности'>
+    В примере ниже показаны шесть слоёв и соответствующие им сущности: хуки, компоненты, функции, маршруты, модели и
+    утилиты.
+
+    В конфигурации `matches` распознаёт компонент по имени папки и наличию файлов `*.tsx` и `index.ts`; остальные
+    файловые сущности распознаются по шаблонам имён. Вложенная сущность `style` распознаёт CSS-модули в корне каждого
+    компонента. Для распознанных компонентов `rules` дополнительно проверяет длину имени папки.
+
+    <ArchSplit variant='slide' treeLabel='Структура проекта' configLabel='Конфигурация'>
+      <Fragment slot='tree'>
+
+        ```tree
+        src/
+        ├── hooks/
+        │   ├── useCounter.ts
+        │   ├── useAuth.ts
+        │   ├── useCart.ts
+        │   ├── useProfile.ts
+        │   ├── useSearch.ts
+        │   └── useTheme.ts
+        ├── components/
+        │   ├── Button/
+        │   │   ├── Button.tsx
+        │   │   ├── index.ts
+        │   │   └── Button.module.css
+        │   ├── Card/
+        │   │   ├── Card.tsx
+        │   │   ├── index.ts
+        │   │   ├── Card.module.css
+        │   │   └── CardHeader.module.css
+        │   └── Modal/
+        │       ├── Modal.tsx
+        │       ├── index.ts
+        │       └── Modal.module.css
+        ├── functions/
+        │   ├── formatDate.ts
+        │   ├── parsePrice.ts
+        │   ├── slugify.ts
+        │   ├── calculateTotal.ts
+        │   ├── normalizeName.ts
+        │   └── validateEmail.ts
+        ├── routes/
+        │   ├── homeRoute.ts
+        │   ├── profileRoute.ts
+        │   ├── settingsRoute.ts
+        │   ├── productsRoute.ts
+        │   ├── checkoutRoute.ts
+        │   └── helpRoute.ts
+        ├── models/
+        │   ├── user.model.ts
+        │   ├── product.model.ts
+        │   ├── session.model.ts
+        │   ├── order.model.ts
+        │   ├── address.model.ts
+        │   └── cart.model.ts
+        └── utils/
+            ├── clamp.util.ts
+            ├── formatCurrency.util.ts
+            ├── createId.util.ts
+            ├── sortBy.util.ts
+            ├── isDefined.util.ts
+            └── debounce.util.ts
+        ```
+
+      </Fragment>
+      <Fragment slot='config'>
+
+        ```ts title="tree-lint.config.ts"
+        import { createConfig } from '@redwestdev/tree-lint';
+
+        export default createConfig({
+          roots: ['src'],
+
+          entities: {
+            hook: {
+              matches: { type: 'file', name: 'use*' },
+            },
+            component: {
+              matches: {
+                type: 'directory',
+                name: '[A-Z]*',
+                children: [
+                  { type: 'file', name: '*.tsx' },
+                  { type: 'file', name: 'index.ts' },
+                ],
+              },
+              entities: ['style'],
+              rules: {
+                nameLength: { type: 'error', max: 20 },
+              },
+            },
+            style: {
+              matches: { type: 'file', name: '*.module.css' },
+            },
+            model: {
+              matches: { type: 'file', name: '*.model.ts' },
+            },
+            function: {
+              matches: { type: 'file', name: '*.ts' },
+            },
+            route: {
+              matches: { type: 'file', name: '*Route.ts' },
+            },
+            util: {
+              matches: { type: 'file', name: '*.util.ts' },
+            },
+          },
+
+          layers: {
+            hooks: { entities: ['hook'] },
+            components: { entities: ['component'] },
+            models: { entities: ['model'] },
+            functions: { entities: ['function'] },
+            routes: { entities: ['route'] },
+            utils: { entities: ['util'] },
+          },
+        });
+        ```
+
+      </Fragment>
+    </ArchSplit>
+
+  </TabItem>
+
+  <TabItem label='Сложный пример'>
+    Страницы распознаются по суффиксу `Page`, компоненты — по имени папки, а файлы-хуки, иконки, изображения, helper- и
+    util-файлы — по шаблонам имён. Правила `rules` проверяют распознанные сущности и содержимое папок. Названия слоёв
+    действуют на любой глубине внутри `roots`, не только в `CatalogPage/`.
+
+    <ArchSplit treeLabel='Структура проекта' configLabel='Конфигурация' variant='slide'>
+      <Fragment slot='tree'>
+
+        ```tree
+        src/
+        └── pages/
+            └── CatalogPage/
+                ├── components/
+                │   ├── AppHeader/
+                │   │   ├── AppHeader.tsx
+                │   │   └── index.ts
+                │   ├── FilterPanel/
+                │   │   ├── FilterPanel.tsx
+                │   │   └── index.ts
+                │   └── ProductCard/
+                │       ├── ProductCard.module.scss
+                │       ├── ProductCard.tsx
+                │       └── index.ts
+                ├── helpers/
+                │   └── createSlug.ts
+                ├── hooks/
+                │   ├── useCatalog.ts
+                │   ├── useFilters.ts
+                │   └── useSession.ts
+                ├── icons/
+                │   └── cart.svg
+                ├── images/
+                │   └── empty-catalog.png
+                ├── utils/
+                │   └── formatPrice.ts
+                ├── CatalogPage.skeleton.tsx
+                ├── CatalogPage.test.tsx
+                ├── CatalogPage.tsx
+                ├── constants.ts
+                ├── index.ts
+                ├── styles.scss
+                └── types.ts
+        ```
+
+      </Fragment>
+      <Fragment slot='config'>
+
+        ```ts title="tree-lint.config.ts"
+        import {createConfig} from '@redwestdev/tree-lint';
+
+        export default createConfig({
+        roots: ['src'],
+        entities: {
+          page: {
+            matches: { type: 'directory', name: '*Page' },
+            rules: {
+              nameLength: { type: 'warning', max: 30 },
+              children: [
+                {
+                  _matches: { type: 'file', name: '*Page.skeleton.tsx' },
+                  lineCount: { type: 'warning', max: 200 },
+                  required: false,
+                },
+                {
+                  _matches: { type: 'file', name: '*Page.test.tsx' },
+                  lineCount: { type: 'warning', max: 200 },
+                  required: false,
+                },
+                {
+                  _matches: { type: 'file', name: '*Page.tsx' },
+                  lineCount: { type: 'warning', max: 300 },
+                  required: true,
+                },
+                {
+                  _matches: { type: 'file', name: 'index.ts' },
+                  lineCount: { type: 'warning', max: 100 },
+                  required: true,
+                },
+                {
+                  _matches: { type: 'file', name: 'constants.ts' },
+                  lineCount: { type: 'warning', max: 200 },
+                  required: false,
+                },
+                {
+                  _matches: { type: 'file', name: 'styles.scss' },
+                  lineCount: { type: 'warning', max: 200 },
+                  required: false,
+                },
+                {
+                  _matches: { type: 'file', name: 'types.ts' },
+                  lineCount: { type: 'warning', max: 200 },
+                  required: false,
+                },
+              ],
+            },
+          },
+          component: {
+            matches: { type: 'directory', name: '[A-Z]*' },
+            rules: {
+              nameLength: { type: 'warning', max: 30 },
+              children: [
+                {
+                  _matches: { type: 'file', name: '*.module.scss' },
+                  lineCount: { type: 'warning', max: 200 },
+                  required: false,
+                },
+                {
+                  _matches: { type: 'file', name: '*.tsx' },
+                  lineCount: { type: 'warning', max: 300 },
+                  required: true,
+                },
+                {
+                  _matches: { type: 'file', name: 'index.ts' },
+                  lineCount: { type: 'warning', max: 100 },
+                  required: true,
+                },
+              ],
+            },
+          },
+          hook: {
+            matches: { type: 'file', name: 'use*' },
+            rules: {
+              lineCount: { type: 'warning', max: 200 },
+            },
+          },
+          icon: {
+            matches: { type: 'file', name: '*.svg' },
+            rules: {
+              size: { type: 'warning', max: 100 },
+            },
+          },
+          image: {
+            matches: { type: 'file', name: '*.png' },
+            rules: {
+              size: { type: 'warning', max: 500 },
+            },
+          },
+          helper: {
+            matches: { type: 'file', name: 'create*.ts' },
+            rules: {
+              lineCount: { type: 'warning', max: 200 },
+            },
+          },
+          util: {
+            matches: { type: 'file', name: 'format*.ts' },
+            rules: {
+              lineCount: { type: 'warning', max: 200 },
+            },
+          },
+        },
+
+
+
+        layers: {
+          pages: { entities: ['page'] },
+          components: { entities: ['component'] },
+          helpers: { entities: ['helper'] },
+          hooks: { entities: ['hook'] },
+          icons: { entities: ['icon'] },
+          images: { entities: ['image'] },
+          utils: { entities: ['util'] },
+        },
+      });
+        ```
+
+      </Fragment>
+    </ArchSplit>
+
+    Поля `required` в `rules.children` показывают, какие дочерние файлы планируется сделать обязательными или
+    необязательными. Это задел на будущую итерацию: установленная версия `@redwestdev/tree-lint@0.0.5` не поддерживает
+    `required` в схемах правил файлов и каталогов, поэтому пример пока не является исполняемой конфигурацией в этой части.
+
+  </TabItem>
+</Tabs>
+
+В базовом примере `useCounter.ts` распознаётся как `hook`, папки компонентов — как `component`, а CSS-модули в корне этих папок — как вложенные сущности `style`. Обычные файлы `.ts` в слое `functions` распознаются как `function`, файлы с окончаниями `.model.ts` и `.util.ts` — как соответствующие сущности, а файлы `*Route.ts` — как `route`.
+
+Это примеры, а не обязательная структура проекта: сущности и слои можно настроить под соглашения проекта.
 
 Распознавание всегда идёт раньше проверки: если узел не совпал с `matches`, правила `rules` этой сущности к нему не применяются.
 

@@ -16,8 +16,8 @@
   border-radius: 0.5rem;
   background-color: var(--ec-frm-edBg, var(--sl-color-bg-inline-code));
   font-family: var(--sl-font-mono, var(--sl-font-system-mono));
-  font-size: var(--sl-text-sm, 0.875rem);
-  line-height: 1.5;
+  font-size: var(--sl-text-base, 1rem);
+  line-height: 1.95;
   overflow-x: auto;
 }
 
@@ -26,6 +26,7 @@
   align-items: center;
   white-space: pre;
   border-radius: 0.25rem;
+  font-size: var(--sl-text-xs, 0.8125rem);
 }
 
 .tl-ft-line:hover {
@@ -52,9 +53,9 @@
 
 .tl-ft-icon {
   flex: none;
-  width: 1.15em;
-  height: 1.15em;
-  margin-right: 0.4em;
+  width: 1.4em;
+  height: 1.4em;
+  margin-right: 0.35em;
 }
 
 /* `--tl-ft-c` is the icon's main color, set per row by the plugin. */

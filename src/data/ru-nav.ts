@@ -34,15 +34,15 @@ const link = (label: string, href: string): RuNavLink => ({
 });
 
 export const RU_NAV: RuNavEntry[] = [
-  link('🚀 Быстрый старт', '/ru/getting-started/quick-start/'),
+  link('Быстрый старт', '/ru/getting-started/quick-start/'),
   {
     type: 'group',
-    label: '📚 Основы и концепция',
+    label: 'Основы и концепция',
     collapsed: false,
     entries: [
       {
         type: 'group',
-        label: '💡 Концепция',
+        label: 'Концепция',
         collapsed: false,
         entries: [
           link('Вступление', '/ru/concepts/intro/'),
@@ -54,7 +54,7 @@ export const RU_NAV: RuNavEntry[] = [
       },
       {
         type: 'group',
-        label: '🔍 Определение (Matching)',
+        label: 'Определение (Matching)',
         collapsed: false,
         entries: [
           link('Как покрыть проект', '/ru/matching/coverage/'),
@@ -65,7 +65,7 @@ export const RU_NAV: RuNavEntry[] = [
       },
       {
         type: 'group',
-        label: '✅ Правила валидации',
+        label: 'Правила валидации',
         collapsed: false,
         entries: [
           link('Валидация слоя', '/ru/validation/layers/'),
@@ -75,7 +75,7 @@ export const RU_NAV: RuNavEntry[] = [
       },
       {
         type: 'group',
-        label: '⚙️ Конфигурация',
+        label: 'Конфигурация',
         collapsed: false,
         entries: [
           link('Форматы конфигурации', '/ru/configuration/config-formats/'),
@@ -89,7 +89,7 @@ export const RU_NAV: RuNavEntry[] = [
   },
   {
     type: 'group',
-    label: '🏛️ Рецепты архитектур',
+    label: 'Рецепты архитектур',
     collapsed: false,
     entries: [
       link('DeepTree', '/ru/recipes/deep-tree/'),
@@ -98,7 +98,7 @@ export const RU_NAV: RuNavEntry[] = [
   },
   {
     type: 'group',
-    label: '🛠️ CLI и Автоматизация',
+    label: 'CLI и Автоматизация',
     collapsed: false,
     entries: [
       link('Команды и флаги CLI (scan / init)', '/ru/cli/commands/'),
@@ -107,7 +107,7 @@ export const RU_NAV: RuNavEntry[] = [
   },
   {
     type: 'group',
-    label: '📖 Справочник',
+    label: 'Справочник',
     collapsed: false,
     entries: [
       link(

@@ -20,3 +20,34 @@
   --color-gray-800: #272727;
   --color-gray-900: #181818;
 }
+
+/* Sidebar navigation styling */
+.sidebar-pane a[aria-current='page'],
+nav.sidebar a[aria-current='page'] {
+  color: var(--sl-color-accent-high, var(--sl-color-text-accent));
+  background-color: var(--sl-color-gray-6, var(--sl-color-bg-inline-code));
+  font-weight: 500;
+  transition:
+    color 150ms ease,
+    background-color 150ms ease;
+}
+
+.sidebar-pane a[aria-current='page']:hover,
+.sidebar-pane a[aria-current='page']:focus,
+nav.sidebar a[aria-current='page']:hover,
+nav.sidebar a[aria-current='page']:focus {
+  color: var(--sl-color-accent-high, var(--sl-color-text-accent));
+  background-color: var(--sl-color-gray-5, var(--sl-color-gray-6));
+}
+
+html[data-theme='dark'] .sidebar-pane a[aria-current='page'],
+html[data-theme='dark'] nav.sidebar a[aria-current='page'] {
+  background-color: color-mix(in oklab, var(--sl-color-white) 6%, transparent);
+}
+
+html[data-theme='dark'] .sidebar-pane a[aria-current='page']:hover,
+html[data-theme='dark'] .sidebar-pane a[aria-current='page']:focus,
+html[data-theme='dark'] nav.sidebar a[aria-current='page']:hover,
+html[data-theme='dark'] nav.sidebar a[aria-current='page']:focus {
+  background-color: color-mix(in oklab, var(--sl-color-white) 9%, transparent);
+}

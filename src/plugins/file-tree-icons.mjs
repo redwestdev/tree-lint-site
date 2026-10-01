@@ -130,6 +130,23 @@ export function resolveIconKey(name, isDir) {
   return theme.file;
 }
 
+/** Material Icon Theme SVG markup and dominant color for a decorative icon in a custom tree view. */
+export function renderIcon(name, isDir, namespace, className = 'tl-ft-icon') {
+  const key = resolveIconKey(name, isDir);
+  const source = readIcon(key).replace(
+    /(id="|url\(#|href="#)([\w-]+)/g,
+    (_match, head, id) => `${head}${namespace}${id}`
+  );
+
+  const svg = source.replace(
+    '<svg ',
+    `<svg class="${className}" aria-hidden="true" `
+  );
+  const color = iconColor(source);
+
+  return { svg, color };
+}
+
 /** Whether a `#rgb`/`#rrggbb` color is far enough from black and white to tint text. */
 function isVisible(color) {
   const hex =
@@ -143,7 +160,7 @@ function isVisible(color) {
 }
 
 /** Most frequent explicit color of the icon artwork. */
-function iconColor(svg) {
+export function iconColor(svg) {
   const counts = new Map();
 
   for (const color of svg.match(COLOR_RE) ?? []) {
@@ -253,15 +270,12 @@ function normalize(node, attributes) {
  * reference internally have to be namespaced to stay unique on the page.
  */
 function inlineIcon(key, prefix) {
-  const source = readIcon(key);
   const namespace = `${prefix}${key.replace(/\W/g, '-')}-`;
-  const [node] = fromHtml(
-    source.replace(
-      /(id="|url\(#|href="#)([\w-]+)/g,
-      (_match, head, id) => `${head}${namespace}${id}`
-    ),
-    { fragment: true }
-  ).children;
+  const source = readIcon(key).replace(
+    /(id="|url\(#|href="#)([\w-]+)/g,
+    (_match, head, id) => `${head}${namespace}${id}`
+  );
+  const [node] = fromHtml(source, { fragment: true }).children;
 
   normalize(node, { class: 'tl-ft-icon', 'aria-hidden': 'true' });
 

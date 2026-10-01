@@ -76,6 +76,10 @@ const isSlide = variant === 'slide';
 
 <style>
   .arch-split {
+    --arch-split-panel-radius: calc(
+      var(--ec-brdRad, 0px) + var(--ec-brdWd, 1px)
+    );
+
     margin: 1.25rem 0;
   }
 
@@ -116,6 +120,10 @@ const isSlide = variant === 'slide';
   .arch-split__col {
     flex: 1 1 100%;
     min-width: 0;
+  }
+
+  .arch-split__panels > .arch-split__col {
+    margin: 0;
   }
 
   .arch-split__toggles {
@@ -173,8 +181,42 @@ const isSlide = variant === 'slide';
 
   /* Let content influence the column widths on wider screens. */
   @media (min-width: 80rem) {
+    .arch-split--variant-columns .arch-split__panels {
+      align-items: stretch;
+    }
+
     .arch-split--variant-columns .arch-split__col {
+      display: flex;
+      flex-direction: column;
       flex: 1 1 auto;
+    }
+
+    .arch-split--variant-columns .arch-split__heading {
+      flex: none;
+    }
+
+    .arch-split--variant-columns .arch-split__col > :global(.tl-ft),
+    .arch-split--variant-columns .arch-split__col > :global(.expressive-code),
+    .arch-split--variant-columns
+      .arch-split__col
+      :global(.expressive-code > .frame) {
+      flex: 1 0 auto;
+    }
+
+    .arch-split--variant-columns .arch-split__col > :global(.expressive-code),
+    .arch-split--variant-columns
+      .arch-split__col
+      :global(.expressive-code > .frame) {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .arch-split--variant-columns .arch-split__col :global(.frame > .header) {
+      flex: none;
+    }
+
+    .arch-split--variant-columns .arch-split__col :global(.frame > pre) {
+      flex: 1 0 auto;
     }
   }
 
@@ -192,13 +234,14 @@ const isSlide = variant === 'slide';
   }
 
   .arch-split__col > :global(.tl-ft) {
+    border-radius: var(--arch-split-panel-radius);
     font-size: 0.75rem;
   }
 
   .arch-split__heading {
     display: flex;
     box-sizing: border-box;
-    height: 1.2em;
+    min-height: 1.2em;
     align-items: flex-start;
     margin-bottom: 0.25rem;
     font-size: var(--sl-text-xs);

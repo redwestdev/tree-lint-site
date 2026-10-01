@@ -28,15 +28,15 @@ import ArchSplit from '../../../../components/ArchSplit.astro';
 
 ```tree
 src/
-├── components/
-│   └── CounterButton/
+├── components/      ← слой
+│   └── CounterButton/  ← сущность
 │       ├── CounterButton.module.css
-│       ├── CounterButton.tsx
+│       ├── CounterButton.tsx  ← часть сущности
 │       └── index.ts
-├── helpers/
-│   └── createSlug.ts
-└── hooks/
-    └── useCounter.ts
+├── helpers/         ← слой
+│   └── createSlug.ts  ← сущность
+└── hooks/           ← слой
+    └── useCounter.ts  ← сущность
 ```
 
       </Fragment>
@@ -95,7 +95,7 @@ export default createConfig({
 
   </TabItem>
 
-  <TabItem label='Базовые сущности'>
+  <TabItem label='Плоская структура'>
     В примере ниже показаны шесть слоёв и соответствующие им сущности: хуки, компоненты, функции, маршруты, модели и
     утилиты.
 
@@ -108,55 +108,55 @@ export default createConfig({
 
         ```tree
         src/
-        ├── hooks/
-        │   ├── useCounter.ts
-        │   ├── useAuth.ts
-        │   ├── useCart.ts
-        │   ├── useProfile.ts
-        │   ├── useSearch.ts
-        │   └── useTheme.ts
-        ├── components/
-        │   ├── Button/
-        │   │   ├── Button.tsx
+        ├── hooks/           ← слой
+        │   ├── useCounter.ts  ← сущность
+        │   ├── useAuth.ts     ← сущность
+        │   ├── useCart.ts     ← сущность
+        │   ├── useProfile.ts  ← сущность
+        │   ├── useSearch.ts   ← сущность
+        │   └── useTheme.ts    ← сущность
+        ├── components/      ← слой
+        │   ├── Button/      ← сущность
+        │   │   ├── Button.tsx  ← часть сущности
         │   │   ├── index.ts
-        │   │   └── Button.module.css
-        │   ├── Card/
+        │   │   └── Button.module.css  ← вложенная сущность
+        │   ├── Card/        ← сущность
         │   │   ├── Card.tsx
         │   │   ├── index.ts
         │   │   ├── Card.module.css
         │   │   └── CardHeader.module.css
-        │   └── Modal/
+        │   └── Modal/       ← сущность
         │       ├── Modal.tsx
         │       ├── index.ts
         │       └── Modal.module.css
-        ├── functions/
-        │   ├── formatDate.ts
-        │   ├── parsePrice.ts
-        │   ├── slugify.ts
-        │   ├── calculateTotal.ts
-        │   ├── normalizeName.ts
-        │   └── validateEmail.ts
-        ├── routes/
-        │   ├── homeRoute.ts
-        │   ├── profileRoute.ts
-        │   ├── settingsRoute.ts
-        │   ├── productsRoute.ts
-        │   ├── checkoutRoute.ts
-        │   └── helpRoute.ts
-        ├── models/
-        │   ├── user.model.ts
-        │   ├── product.model.ts
-        │   ├── session.model.ts
-        │   ├── order.model.ts
-        │   ├── address.model.ts
-        │   └── cart.model.ts
-        └── utils/
-            ├── clamp.util.ts
-            ├── formatCurrency.util.ts
-            ├── createId.util.ts
-            ├── sortBy.util.ts
-            ├── isDefined.util.ts
-            └── debounce.util.ts
+        ├── functions/       ← слой
+        │   ├── formatDate.ts  ← сущность
+        │   ├── parsePrice.ts  ← сущность
+        │   ├── slugify.ts     ← сущность
+        │   ├── calculateTotal.ts  ← сущность
+        │   ├── normalizeName.ts   ← сущность
+        │   └── validateEmail.ts  ← сущность
+        ├── routes/          ← слой
+        │   ├── homeRoute.ts      ← сущность
+        │   ├── profileRoute.ts   ← сущность
+        │   ├── settingsRoute.ts  ← сущность
+        │   ├── productsRoute.ts  ← сущность
+        │   ├── checkoutRoute.ts  ← сущность
+        │   └── helpRoute.ts      ← сущность
+        ├── models/          ← слой
+        │   ├── user.model.ts     ← сущность
+        │   ├── product.model.ts  ← сущность
+        │   ├── session.model.ts  ← сущность
+        │   ├── order.model.ts    ← сущность
+        │   ├── address.model.ts  ← сущность
+        │   └── cart.model.ts     ← сущность
+        └── utils/           ← слой
+            ├── clamp.util.ts        ← сущность
+            ├── formatCurrency.util.ts  ← сущность
+            ├── createId.util.ts     ← сущность
+            ├── sortBy.util.ts       ← сущность
+            ├── isDefined.util.ts    ← сущность
+            └── debounce.util.ts     ← сущность
         ```
 
       </Fragment>
@@ -219,44 +219,44 @@ export default createConfig({
 
   </TabItem>
 
-  <TabItem label='Сложный пример'>
+  <TabItem label='Вложеная структура'>
     Страницы распознаются по суффиксу `Page`, компоненты — по имени папки, а файлы-хуки, иконки, изображения, helper- и
-    util-файлы — по шаблонам имён. Правила `rules` проверяют распознанные сущности и содержимое папок. Названия слоёв
-    действуют на любой глубине внутри `roots`, не только в `CatalogPage/`.
+    util-файлы — по шаблонам имён. Правила `rules.children` проверяют подходящие файлы, которые есть в папке, но не
+    требуют их наличия. Названия слоёв действуют на любой глубине внутри `roots`, не только в `CatalogPage/`.
 
-    <ArchSplit treeLabel='Структура проекта' configLabel='Конфигурация' variant='slide'>
+    <ArchSplit variant='slide' treeLabel='Структура проекта' configLabel='Конфигурация'>
       <Fragment slot='tree'>
 
         ```tree
         src/
-        └── pages/
-            └── CatalogPage/
-                ├── components/
-                │   ├── AppHeader/
-                │   │   ├── AppHeader.tsx
+        └── pages/                 ← слой
+            └── CatalogPage/       ← сущность
+                ├── components/    ← слой
+                │   ├── AppHeader/  ← сущность
+                │   │   ├── AppHeader.tsx  ← часть сущности
                 │   │   └── index.ts
-                │   ├── FilterPanel/
-                │   │   ├── FilterPanel.tsx
+                │   ├── FilterPanel/  ← сущность
+                │   │   ├── FilterPanel.tsx  ← часть сущности
                 │   │   └── index.ts
-                │   └── ProductCard/
+                │   └── ProductCard/  ← сущность
                 │       ├── ProductCard.module.scss
-                │       ├── ProductCard.tsx
+                │       ├── ProductCard.tsx  ← часть сущности
                 │       └── index.ts
-                ├── helpers/
-                │   └── createSlug.ts
-                ├── hooks/
-                │   ├── useCatalog.ts
-                │   ├── useFilters.ts
-                │   └── useSession.ts
-                ├── icons/
-                │   └── cart.svg
-                ├── images/
-                │   └── empty-catalog.png
-                ├── utils/
-                │   └── formatPrice.ts
+                ├── helpers/        ← слой
+                │   └── createSlug.ts  ← сущность
+                ├── hooks/          ← слой
+                │   ├── useCatalog.ts  ← сущность
+                │   ├── useFilters.ts  ← сущность
+                │   └── useSession.ts  ← сущность
+                ├── icons/          ← слой
+                │   └── cart.svg    ← сущность
+                ├── images/         ← слой
+                │   └── empty-catalog.png  ← сущность
+                ├── utils/          ← слой
+                │   └── formatPrice.ts  ← сущность
                 ├── CatalogPage.skeleton.tsx
                 ├── CatalogPage.test.tsx
-                ├── CatalogPage.tsx
+                ├── CatalogPage.tsx  ← часть сущности
                 ├── constants.ts
                 ├── index.ts
                 ├── styles.scss
@@ -267,129 +267,114 @@ export default createConfig({
       <Fragment slot='config'>
 
         ```ts title="tree-lint.config.ts"
-        import {createConfig} from '@redwestdev/tree-lint';
+        import { createConfig } from '@redwestdev/tree-lint';
 
         export default createConfig({
-        roots: ['src'],
-        entities: {
-          page: {
-            matches: { type: 'directory', name: '*Page' },
-            rules: {
-              nameLength: { type: 'warning', max: 30 },
-              children: [
-                {
-                  _matches: { type: 'file', name: '*Page.skeleton.tsx' },
-                  lineCount: { type: 'warning', max: 200 },
-                  required: false,
-                },
-                {
-                  _matches: { type: 'file', name: '*Page.test.tsx' },
-                  lineCount: { type: 'warning', max: 200 },
-                  required: false,
-                },
-                {
-                  _matches: { type: 'file', name: '*Page.tsx' },
-                  lineCount: { type: 'warning', max: 300 },
-                  required: true,
-                },
-                {
-                  _matches: { type: 'file', name: 'index.ts' },
-                  lineCount: { type: 'warning', max: 100 },
-                  required: true,
-                },
-                {
-                  _matches: { type: 'file', name: 'constants.ts' },
-                  lineCount: { type: 'warning', max: 200 },
-                  required: false,
-                },
-                {
-                  _matches: { type: 'file', name: 'styles.scss' },
-                  lineCount: { type: 'warning', max: 200 },
-                  required: false,
-                },
-                {
-                  _matches: { type: 'file', name: 'types.ts' },
-                  lineCount: { type: 'warning', max: 200 },
-                  required: false,
-                },
-              ],
-            },
-          },
-          component: {
-            matches: { type: 'directory', name: '[A-Z]*' },
-            rules: {
-              nameLength: { type: 'warning', max: 30 },
-              children: [
-                {
-                  _matches: { type: 'file', name: '*.module.scss' },
-                  lineCount: { type: 'warning', max: 200 },
-                  required: false,
-                },
-                {
-                  _matches: { type: 'file', name: '*.tsx' },
-                  lineCount: { type: 'warning', max: 300 },
-                  required: true,
-                },
-                {
-                  _matches: { type: 'file', name: 'index.ts' },
-                  lineCount: { type: 'warning', max: 100 },
-                  required: true,
-                },
-              ],
-            },
-          },
-          hook: {
-            matches: { type: 'file', name: 'use*' },
-            rules: {
-              lineCount: { type: 'warning', max: 200 },
-            },
-          },
-          icon: {
-            matches: { type: 'file', name: '*.svg' },
-            rules: {
-              size: { type: 'warning', max: 100 },
-            },
-          },
-          image: {
-            matches: { type: 'file', name: '*.png' },
-            rules: {
-              size: { type: 'warning', max: 500 },
-            },
-          },
-          helper: {
-            matches: { type: 'file', name: 'create*.ts' },
-            rules: {
-              lineCount: { type: 'warning', max: 200 },
-            },
-          },
-          util: {
-            matches: { type: 'file', name: 'format*.ts' },
-            rules: {
-              lineCount: { type: 'warning', max: 200 },
-            },
-          },
-        },
+          roots: ['src'],
 
+          entities: {
+            page: {
+              matches: { type: 'directory', name: '*Page' },
+              rules: {
+                nameLength: { type: 'warning', max: 30 },
+                children: [
+                  {
+                    _matches: { type: 'file', name: '*Page.skeleton.tsx' },
+                    lineCount: { type: 'warning', max: 200 },
+                  },
+                  {
+                    _matches: { type: 'file', name: '*Page.test.tsx' },
+                    lineCount: { type: 'warning', max: 200 },
+                  },
+                  {
+                    _matches: { type: 'file', name: '*Page.tsx' },
+                    lineCount: { type: 'warning', max: 300 },
+                  },
+                  {
+                    _matches: { type: 'file', name: 'index.ts' },
+                    lineCount: { type: 'warning', max: 100 },
+                  },
+                  {
+                    _matches: { type: 'file', name: 'constants.ts' },
+                    lineCount: { type: 'warning', max: 200 },
+                  },
+                  {
+                    _matches: { type: 'file', name: 'styles.scss' },
+                    lineCount: { type: 'warning', max: 200 },
+                  },
+                  {
+                    _matches: { type: 'file', name: 'types.ts' },
+                    lineCount: { type: 'warning', max: 200 },
+                  },
+                ],
+              },
+            },
+            component: {
+              matches: { type: 'directory', name: '[A-Z]*' },
+              rules: {
+                nameLength: { type: 'warning', max: 30 },
+                children: [
+                  {
+                    _matches: { type: 'file', name: '*.module.scss' },
+                    lineCount: { type: 'warning', max: 200 },
+                  },
+                  {
+                    _matches: { type: 'file', name: '*.tsx' },
+                    lineCount: { type: 'warning', max: 300 },
+                  },
+                  {
+                    _matches: { type: 'file', name: 'index.ts' },
+                    lineCount: { type: 'warning', max: 100 },
+                  },
+                ],
+              },
+            },
+            hook: {
+              matches: { type: 'file', name: 'use*' },
+              rules: {
+                lineCount: { type: 'warning', max: 200 },
+              },
+            },
+            icon: {
+              matches: { type: 'file', name: '*.svg' },
+              rules: {
+                size: { type: 'warning', max: 100 },
+              },
+            },
+            image: {
+              matches: { type: 'file', name: '*.png' },
+              rules: {
+                size: { type: 'warning', max: 500 },
+              },
+            },
+            helper: {
+              matches: { type: 'file', name: 'create*.ts' },
+              rules: {
+                lineCount: { type: 'warning', max: 200 },
+              },
+            },
+            util: {
+              matches: { type: 'file', name: 'format*.ts' },
+              rules: {
+                lineCount: { type: 'warning', max: 200 },
+              },
+            },
+          },
 
-
-        layers: {
-          pages: { entities: ['page'] },
-          components: { entities: ['component'] },
-          helpers: { entities: ['helper'] },
-          hooks: { entities: ['hook'] },
-          icons: { entities: ['icon'] },
-          images: { entities: ['image'] },
-          utils: { entities: ['util'] },
-        },
-      });
+          layers: {
+            pages: { entities: ['page'] },
+            components: { entities: ['component'] },
+            helpers: { entities: ['helper'] },
+            hooks: { entities: ['hook'] },
+            icons: { entities: ['icon'] },
+            images: { entities: ['image'] },
+            utils: { entities: ['util'] },
+          },
+        });
         ```
 
       </Fragment>
     </ArchSplit>
-
-    Поля `required` в `rules.children` показывают, какие дочерние файлы планируется сделать обязательными или
-    необязательными. Это задел на будущую итерацию: установленная версия `@redwestdev/tree-lint@0.0.5` не поддерживает
-    `required` в схемах правил файлов и каталогов, поэтому пример пока не является исполняемой конфигурацией в этой части.
 
   </TabItem>
 </Tabs>

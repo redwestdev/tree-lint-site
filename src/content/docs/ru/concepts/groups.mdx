@@ -1,35 +1,395 @@
 ---
 title: Группы
-description: 'Группа — способ применить правила к папке по паттерну имени, не объявляя её сущностью.'
+description: 'Группа позволяет проверять обычные папки по имени и содержимому, не объявляя их сущностями.'
 ---
 
-**Группа** — способ применить правила к папке по паттерну имени, не объявляя её сущностью. Она применяется к «обычным» папкам, которые не стали слоями и не распознаны как сущности, и работает как `matches` + `rules` в одном объекте:
-Группа создавалась как способ разделения сущностей внутри слоя на группы путем помещения их в папку.
-Группа не может назвываться именем слоя. (показать пример со структур)
+import { Tabs, TabItem } from '@astrojs/starlight/components';
+import ArchSplit from '../../../../components/ArchSplit.astro';
 
-(показать пример с архитектурой где слой поделен на группы причем группы в группах)
-Группа не может находится внутри сущности (на первом уровне вложености).
-Это может быть частью сущности при указании такого в конфиге.
+**Группа** позволяет применять правила к обычной папке, не объявляя её сущностью. Группа создавалсь с целью объединять по смыслу сущности, но для них не нужны отдельный тип сущности или слой.
 
-(нужен пример со структурой где папка внутри сущности)
+У групп, слоёв и сущностей разные задачи:
 
-Группу можно определить и по имени файла (к примеру наличие на первом уровне index.ts и остальных групп может обозначает что это группа)
+- **Слой** — папка с именем, указанным в `layers`; он задаёт, какие сущности искать внутри.
+- **Сущность** — объявленный в `entities` тип файлов или папок. Чтобы распознаваться, сущность связывают со слоем или объявляют вложенной сущностью.
+- **Группа** — обычная папка, к которой применяются критерии сопоставления и правила. Её не нужно объявлять в `entities` или привязывать к слою.
 
-```ts
+## Когда использовать группы
+
+Группы удобны, чтобы разделить сущности по папкам, не создавая для каждой такой папки отдельную архитектурную сущность. По умолчанию группы работаю�� автоматически без секции `groups`, а при необходимости к ним можно добавить правила:
+
+<Tabs syncKey='groups-before-after'>
+  <TabItem label='До'>
+    <ArchSplit variant='slide' treeLabel='Структура проекта' configLabel='Конфигурация'>
+      <Fragment slot='tree'>
+
+```tree
+src/
+└── components/        ← слой
+    ├── IconButton/    ← сущность
+    ├── TextButton/    ← сущность
+    ├── TextField/     ← сущность
+    └── SwitchField/   ← сущность
+```
+
+      </Fragment>
+      <Fragment slot='config'>
+
+```ts title="tree-lint.config.ts"
+import { createConfig } from '@redwestdev/tree-lint';
+
+export default createConfig({
+  roots: ['src'],
+  entities: {
+    component: { matches: { type: 'directory', name: '[A-Z]*' } },
+  },
+  layers: {
+    components: { entities: ['component'] },
+  },
+});
+```
+
+      </Fragment>
+    </ArchSplit>
+
+  </TabItem>
+  <TabItem label='После'>
+    <ArchSplit variant='slide' treeLabel='Структура проекта' configLabel='Конфигурация'>
+      <Fragment slot='tree'>
+
+```tree
+src/
+└── components/        ← слой
+    ├── buttons/       ← группа
+    │   ├── IconButton/      ← сущность
+    │   └── TextButton/      ← сущность
+    └── fields/        ← группа
+        ├── TextField/       ← сущность
+        └── SwitchField/     ← сущность
+```
+
+      </Fragment>
+      <Fragment slot='config'>
+
+```ts title="tree-lint.config.ts"
+import { createConfig } from '@redwestdev/tree-lint';
+
+export default createConfig({
+  roots: ['src'],
+  entities: {
+    component: { matches: { type: 'directory', name: '[A-Z]*' } },
+  },
+  layers: {
+    components: { entities: ['component'] },
+  },
+  groups: {
+    name: '*',
+    rules: { nameLength: { type: 'warning', max: 20 } },
+  },
+});
+```
+
+      </Fragment>
+      </ArchSplit>
+
+  </TabItem>
+</Tabs>
+
+Здесь `components` — слой, `buttons` и `fields` — группы, а `IconButton`, `TextButton`, `TextField` и `SwitchField` — сущности.
+
+> Группируйте сущности как вам удобно
+
+### Вложенные группы
+
+Группы можно вкладывать друг в друга. Например, папку `commerce` можно разделить на группы по области проекта, а внутри них разместить сущности:
+
+<Tabs syncKey='groups-example'>
+  <TabItem label='Вложенные группы'>
+    Папки `commerce`, `checkout` и `products` — группы; `Checkout` и `ProductCard` — сущности внутри них.
+
+    <ArchSplit variant='slide' treeLabel='Структура проекта' configLabel='Конфигурация'>
+      <Fragment slot='tree'>
+
+```tree
+src/
+└── components/        ← слой
+    └── commerce/      ← группа
+        ├── checkout/  ← группа
+        │   └── Checkout/    ← сущность
+        └── products/  ← группа
+            └── ProductCard/ ← сущность
+```
+
+      </Fragment>
+      <Fragment slot='config'>
+
+```ts title="tree-lint.config.ts"
+import { createConfig } from '@redwestdev/tree-lint';
+
+export default createConfig({
+  roots: ['src'],
+  entities: {
+    component: { matches: { type: 'directory', name: '[A-Z]*' } },
+  },
+  layers: {
+    components: { entities: ['component'] },
+  },
+  groups: {
+    name: '*',
+    rules: { nameLength: { type: 'warning', max: 20 } },
+  },
+});
+```
+
+      </Fragment>
+    </ArchSplit>
+
+  </TabItem>
+
+  <TabItem label='Несколько уровней групп'>
+    Здесь `ui`, `buttons`, `fields` и `forms` — группы внутри слоя `components`; папки компонентов распознаются как сущности.
+
+    <ArchSplit variant='slide' treeLabel='Структура проекта' configLabel='Конфигурация'>
+      <Fragment slot='tree'>
+
+```tree
+src/
+└── components/        ← слой
+    ├── ui/            ← группа
+    │   ├── buttons/   ← группа
+    │   │   ├── IconButton/    ← сущность
+    │   │   └── TextButton/    ← сущность
+    │   └── fields/    ← группа
+    │       ├── TextField/     ← сущность
+    │       └── SwitchField/   ← сущность
+    └── forms/         ← группа
+        ├── LoginForm/         ← сущность
+        └── SearchForm/        ← сущность
+```
+
+      </Fragment>
+      <Fragment slot='config'>
+
+```ts title="tree-lint.config.ts"
+import { createConfig } from '@redwestdev/tree-lint';
+
+export default createConfig({
+  roots: ['src'],
+  entities: {
+    component: { matches: { type: 'directory', name: '[A-Z]*' } },
+  },
+  layers: {
+    components: { entities: ['component'] },
+  },
+  groups: {
+    name: '*',
+    rules: { nameLength: { type: 'warning', max: 20 } },
+  },
+});
+```
+
+      </Fragment>
+    </ArchSplit>
+
+  </TabItem>
+
+  <TabItem label='Группы и слои'>
+    `components` и `ui` — слои, а `buttons`, `fields` и `forms` — обычные папки-группы между слоями и сущностями.
+
+    <ArchSplit variant='slide' treeLabel='Структура проекта' configLabel='Конфигурация'>
+      <Fragment slot='tree'>
+
+```tree
+src/
+└── components/        ← слой
+    ├── ui/            ← слой
+    │   ├── buttons/   ← группа
+    │   │   ├── IconButton/    ← сущность
+    │   │   └── TextButton/    ← сущность
+    │   └── fields/    ← группа
+    │       ├── TextField/     ← сущность
+    │       └── SwitchField/   ← сущность
+    └── forms/         ← группа
+        ├── LoginForm/         ← сущность
+        └── SearchForm/        ← сущность
+```
+
+      </Fragment>
+      <Fragment slot='config'>
+
+```ts title="tree-lint.config.ts"
+import { createConfig } from '@redwestdev/tree-lint';
+
+export default createConfig({
+  roots: ['src'],
+  entities: {
+    component: { matches: { type: 'directory', name: '[A-Z]*' } },
+  },
+  layers: {
+    components: { entities: ['component'] },
+    ui: { entities: ['component'] },
+  },
+  groups: {
+    name: '*',
+    rules: { nameLength: { type: 'warning', max: 20 } },
+  },
+});
+```
+
+      </Fragment>
+    </ArchSplit>
+
+  </TabItem>
+</Tabs>
+
+Группа применяется только к _обычной папке_ — той, которая не распознана как слой или сущность.
+В ней должен быть хотя бы один распознанный дочерний элемент: слой, сущность или другая группа. Папка, содержащая только нераспознанные файлы, группой не станет.
+Поэтому группа не заменяет сущность там, где нужен отдельный тип с собственным описанием и связью со слоем.
+
+## Сопоставление и правила
+
+В конфигурации `groups` — один объект. Необязательное поле `matches` задаёт критерии сопоставления: `name` — шаблон имени папки, а `children` — список дочерних элементов, которые должны в ней найтись. Поле `rules` задаёт проверки самой папки:
+
+<ArchSplit variant='columns' treeLabel='Структура проекта' configLabel='Конфигурация'>
+  <Fragment slot='tree'>
+
+```tree
+src/
+└── components/        ← слой
+    └── buttons/       ← группа
+        ├── IconButton/  ← сущность
+        ├── TextButton/  ← сущность
+        └── index.ts
+```
+
+  </Fragment>
+  <Fragment slot='config'>
+
+```ts title="tree-lint.config.ts"
 groups: {
-  name: "[a-z]*",
-  children: [{ type: "file", name: "*.test.ts" }],
-  rules: { nameLength: { type: "warning", max: 20 } },
+  matches: {
+    name: '[a-z]*',
+    children: [{ type: 'file', name: 'index.ts' }],
+  },
+  rules: { nameLength: { type: 'warning', max: 20 } },
 },
 ```
 
-Технически вы можете поставить в группу что угодно но мы рекомендуем использовать группу для сегментации сущностей.
+  </Fragment>
+</ArchSplit>
 
-Группа -> Слой -> Группа -- не супер
-Слой-> Группа -> Сущность -> Слои -> Cущность
-Слой-> Группа -> Группа -> Сущность
+В примере папка `buttons` соответствует шаблону имени и содержит обязательный файл `index.ts`.
+В ней также есть распознанные дочерние сущности
 
-Группа нужна, когда важно проверить папки по имени или составу, но объявлять их сущностями со слоями не хочется — например, каталоги тестов.
+`IconButton` и `TextButton` — без хотя бы одного распознанного дочернего элемента группа не применяется.
+
+`rules` проверяет длину имени папки; лишние дочерние элементы не мешают сопоставлению.
+Если заданы критерии `matches`, но совпадение неполное, Tree-lint выводит предупреждение распознавания.
+
+Если отдельные критерии сопоставления не нужны, `matches` можно опустить: правила будут применяться к подходящим обычным папкам без отбора по имени или составу.
+Как и для других групп, у папки должен быть хотя бы один распознанный дочерний элемент.
+
+Вкладки ниже показывают примеры только с `groups.rules`; предполагается, что сущности и слои уже настроены.
+
+### Только правила
+
+<Tabs syncKey='groups-rules-only'>
+  <TabItem label='Длина имени'>
+    Папка `buttons` — обычная папка-группа, а `IconButton` и `TextButton` — распознанные сущности. Правило проверяет длину имени папки, но не выбирает группу по имени.
+
+    <ArchSplit variant='slide' treeLabel='Структура проекта' configLabel='Конфигурация'>
+      <Fragment slot='tree'>
+
+```tree
+src/
+└── components/        ← слой
+    └── buttons/       ← группа
+        ├── IconButton/  ← сущность
+        └── TextButton/  ← сущность
+```
+
+      </Fragment>
+      <Fragment slot='config'>
+
+```ts
+groups: {
+  rules: {
+    nameLength: { type: 'warning', max: 20 },
+  },
+},
+```
+
+      </Fragment>
+    </ArchSplit>
+
+  </TabItem>
+
+  <TabItem label='Число элементов'>
+    Цель этого кейса подсветить перегруженые количеством участки, потенциально требующие рефакторинга.
+
+    В папке `forms` находятся две распознанные сущности. Правило ограничивает количество её непосредственных дочерних элементов.
+
+    <ArchSplit variant='slide' treeLabel='Структура проекта' configLabel='Конфигурация'>
+      <Fragment slot='tree'>
+
+```tree
+src/
+└── components/        ← слой
+    └── forms/         ← группа
+        ├── LoginForm/   ← сущность
+        └── SearchForm/  ← сущность
+```
+
+      </Fragment>
+      <Fragment slot='config'>
+
+```ts
+groups: {
+  rules: {
+    childrenAmount: { type: 'warning', min: 2, max: 5 },
+  },
+},
+```
+
+      </Fragment>
+    </ArchSplit>
+
+  </TabItem>
+
+  <TabItem label='Размер папки'>
+    Цель этого кейса подсветить перегруженые по весу участки, потенциально требующие рефакторинга.
+
+    В группе `icons` расположены распознанные сущности-иконки. Правило проверяет суммарный размер файлов внутри папки; `max` задаётся в килобайтах.
+
+    <ArchSplit variant='slide' treeLabel='Структура проекта' configLabel='Конфигурация'>
+      <Fragment slot='tree'>
+
+```tree
+src/
+└── components/        ← слой
+    └── icons/         ← группа
+        ├── ArrowIcon/   ← сущность
+        └── CloseIcon/   ← сущность
+```
+
+      </Fragment>
+      <Fragment slot='config'>
+
+```ts
+groups: {
+  rules: {
+    size: { type: 'warning', max: 100 },
+  },
+},
+```
+
+      </Fragment>
+    </ArchSplit>
+
+  </TabItem>
+</Tabs>
+
+Правила относятся к папке группы, а не заменяют правила для её дочерних сущностей.
 
 ## Дальше
 
